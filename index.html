@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - Final Scene Photo & Follow Button Stage</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - Background Music & Final Hold Stage</title>
     <style>
         * {
             margin: 0;
@@ -52,7 +52,7 @@
             cursor: pointer;
         }
 
-        /* উপরের ১০টি সিনের প্রগ্রেস বার ও স্ট্যাটাস */
+        /* উপরের ১০টি সিনের প্রগ্রেস বার ও টাইমার */
         .stage-header {
             padding: 12px 20px 4px;
             z-index: 20;
@@ -81,44 +81,8 @@
 
         .status-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: rgba(3, 18, 24, 0.45);
-            padding: 4px 12px;
-            border-radius: 99px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #fef9c3;
-        }
-
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #facc15;
-            animation: pulseDot 1.4s infinite;
-        }
-
-        .stage-16-9.paused .pulse-dot {
-            background: #94a3b8;
-            animation: none;
-        }
-
-        @keyframes pulseDot {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.55; }
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .timer-pill {
@@ -128,32 +92,6 @@
             border-radius: 99px;
             font-size: 0.74rem;
             font-weight: 600;
-        }
-
-        .sound-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(3, 18, 24, 0.5);
-            color: #fef08a;
-            border: 1px solid rgba(250, 204, 21, 0.35);
-            padding: 4px 12px;
-            border-radius: 99px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
-            z-index: 30;
-        }
-
-        .sound-toggle:hover {
-            background: rgba(3, 18, 24, 0.75);
-            transform: scale(1.04);
-        }
-
-        .sound-toggle.muted {
-            color: #94a3b8;
-            border-color: rgba(148, 163, 184, 0.3);
         }
 
         /* মাঝখানের স্বচ্ছ সিন এরিয়া */
@@ -882,17 +820,7 @@
         <header class="stage-header">
             <div class="progress-bars" id="progressBars"></div>
             <div class="status-row">
-                <div class="status-badge">
-                    <span class="pulse-dot"></span>
-                    <span id="statusText">SCENE 1 / 10</span>
-                </div>
-                <div class="header-right">
-                    <span class="timer-pill" id="timerPill">00s / 50s</span>
-                    <button type="button" class="sound-toggle" id="soundToggleBtn" aria-label="Sound Toggle">
-                        <span id="soundIcon">🔊</span>
-                        <span id="soundLabel">Sound ON</span>
-                    </button>
-                </div>
+                <span class="timer-pill" id="timerPill">00s / 55s</span>
             </div>
         </header>
 
@@ -908,6 +836,8 @@
 
     <script>
         const USER_PHOTO_URL = "saroar01.png";
+        const BG_MUSIC_URL = "music1";
+        const EXTRA_HOLD_MS = 5000; // লাস্ট সিনের সময় শেষ হওয়ার পর আরও ৫ সেকেন্ড স্টিল
 
         /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
         const canvas = document.getElementById('networkCanvas');
@@ -975,11 +905,16 @@
         initNetwork();
         animateNetwork();
 
-        /* ২. Web Audio API সাউন্ড ইঞ্জিন */
+        /* ২. Web Audio API সাউন্ড ইঞ্জিন + 5% ব্যাকগ্রাউন্ড মিউজিক */
         class StageSoundEngine {
-            constructor() {
+            constructor(bgMusicSrc) {
                 this.ctx = null;
-                this.enabled = true;
+                this.bgAudio = new Audio(bgMusicSrc);
+                this.bgAudio.volume = 0.05; // 5% ভলিউম
+                this.bgAudio.loop = true;
+                this.bgAudio.preload = "auto";
+                this.bgStarted = false;
+                this.sequenceFinished = false;
             }
 
             unlock() {
@@ -992,14 +927,31 @@
                 }
             }
 
-            toggle() {
-                this.unlock();
-                this.enabled = !this.enabled;
-                return this.enabled;
+            startBackgroundMusic() {
+                if (this.sequenceFinished) return;
+                this.bgAudio.volume = 0.05;
+                const playPromise = this.bgAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        this.bgStarted = true;
+                    }).catch(() => {});
+                } else {
+                    this.bgStarted = true;
+                }
+            }
+
+            pauseBackgroundMusic() {
+                this.bgAudio.pause();
+            }
+
+            stopBackgroundMusicAtEnd() {
+                this.sequenceFinished = true;
+                this.bgAudio.pause();
+                this.bgAudio.currentTime = 0;
             }
 
             playSoftPop(step = 0) {
-                if (!this.enabled) return;
+                if (this.sequenceFinished) return;
                 this.unlock();
                 const now = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
@@ -1021,7 +973,7 @@
             }
 
             playMouseClick() {
-                if (!this.enabled) return;
+                if (this.sequenceFinished) return;
                 this.unlock();
                 const now = this.ctx.currentTime;
 
@@ -1042,7 +994,7 @@
             }
 
             playTransitionWhoosh() {
-                if (!this.enabled) return;
+                if (this.sequenceFinished) return;
                 this.unlock();
                 const now = this.ctx.currentTime;
                 const duration = 0.42;
@@ -1078,7 +1030,7 @@
             }
 
             playSuccessChime() {
-                if (!this.enabled) return;
+                if (this.sequenceFinished) return;
                 this.unlock();
                 const now = this.ctx.currentTime;
                 const notes = [523.25, 659.25, 783.99];
@@ -1103,7 +1055,7 @@
             }
         }
 
-        const soundEngine = new StageSoundEngine();
+        const soundEngine = new StageSoundEngine(BG_MUSIC_URL);
 
         /* ৩. লাইভ অ্যানিমেটেড SVG আইকন লাইব্রেরি */
         const LIVE_ICONS = {
@@ -1360,27 +1312,26 @@
             }
         ];
 
-        const TOTAL_DURATION = scenes.reduce((sum, s) => sum + s.duration, 0);
+        const ANIMATION_DURATION = scenes.reduce((sum, s) => sum + s.duration, 0);
+        const TOTAL_TIMELINE_MS = ANIMATION_DURATION + EXTRA_HOLD_MS;
 
         const stage169 = document.getElementById('stage169');
         const progressBarsEl = document.getElementById('progressBars');
         const visualViewport = document.getElementById('visualViewport');
         const karaokeCaption = document.getElementById('karaokeCaption');
-        const statusText = document.getElementById('statusText');
         const timerPill = document.getElementById('timerPill');
         const touchFeedback = document.getElementById('touchFeedback');
-        const soundToggleBtn = document.getElementById('soundToggleBtn');
-        const soundIcon = document.getElementById('soundIcon');
-        const soundLabel = document.getElementById('soundLabel');
 
         let currentSceneIndex = 0;
         let activeLayerEl = null;
         let isPlaying = true;
         let elapsedInScene = 0;
+        let totalElapsedMs = 0;
         let lastTimestamp = null;
         let popTimers = [];
         let feedbackTimeout = null;
         let preExitTriggered = false;
+        let sequenceCompleted = false;
 
         scenes.forEach(() => {
             const track = document.createElement('div');
@@ -1491,7 +1442,7 @@
             const scene = scenes[index];
             scene.timedWords = buildTimedWords(scene.caption);
 
-            statusText.textContent = `SCENE ${index + 1} / ${scenes.length}`;
+            soundEngine.startBackgroundMusic();
             soundEngine.playTransitionWhoosh();
 
             const flowDir = getSceneFlowDirection(index);
@@ -1522,15 +1473,14 @@
                 for (let i = 0; i < totalItems; i++) {
                     const delayMs = 80 + i * 48;
                     const timer = setTimeout(() => {
-                        if (isPlaying) soundEngine.playSoftPop(i);
+                        if (isPlaying && !sequenceCompleted) soundEngine.playSoftPop(i);
                     }, delayMs);
                     popTimers.push(timer);
                 }
 
-                /* শেষ সিনে রিং বেলে ক্লিক সাউন্ড এবং রিং বেল পরিবর্তন হয়ে ফলো বাটন ভেসে ওঠা */
                 if (scene.isEnding) {
                     const clickTimer = setTimeout(() => {
-                        if (!isPlaying) return;
+                        if (!isPlaying || sequenceCompleted) return;
                         soundEngine.playMouseClick();
 
                         const bellBefore = newLayer.querySelector('#bellBeforeClick');
@@ -1546,7 +1496,7 @@
                         }
 
                         const chimeTimer = setTimeout(() => {
-                            if (isPlaying) soundEngine.playSuccessChime();
+                            if (isPlaying && !sequenceCompleted) soundEngine.playSuccessChime();
                         }, 140);
                         popTimers.push(chimeTimer);
                     }, 1520);
@@ -1564,49 +1514,82 @@
             const delta = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
 
-            if (isPlaying) {
-                const scene = scenes[currentSceneIndex];
-                elapsedInScene += delta;
-                const progress = Math.min(elapsedInScene / scene.duration, 1);
+            if (isPlaying && !sequenceCompleted) {
+                totalElapsedMs = Math.min(totalElapsedMs + delta, TOTAL_TIMELINE_MS);
+                const totalSec = Math.floor(totalElapsedMs / 1000);
+                timerPill.textContent = `${String(totalSec).padStart(2, '0')}s / 55s`;
 
-                progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
+                const isLastScene = currentSceneIndex === scenes.length - 1;
 
-                const completedBefore = scenes
-                    .slice(0, currentSceneIndex)
-                    .reduce((acc, s) => acc + s.duration, 0);
-                const totalElapsedSec = Math.min(
-                    Math.floor((completedBefore + elapsedInScene) / 1000),
-                    TOTAL_DURATION / 1000
-                );
-                timerPill.textContent = `${String(totalElapsedSec).padStart(2, '0')}s / 50s`;
+                if (!isLastScene) {
+                    const scene = scenes[currentSceneIndex];
+                    elapsedInScene += delta;
+                    const progress = Math.min(elapsedInScene / scene.duration, 1);
+                    progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
 
-                const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                const caretEl = karaokeCaption.querySelector('.typing-caret');
+                    const wordEls = karaokeCaption.querySelectorAll('.k-word');
+                    const caretEl = karaokeCaption.querySelector('.typing-caret');
 
-                scene.timedWords.forEach((w, idx) => {
-                    if (progress >= w.start && progress <= w.end) {
-                        wordEls[idx].classList.add('active');
-                        wordEls[idx].classList.remove('spoken');
-                        if (caretEl && wordEls[idx].nextSibling !== caretEl) {
-                            wordEls[idx].after(caretEl);
+                    scene.timedWords.forEach((w, idx) => {
+                        if (progress >= w.start && progress <= w.end) {
+                            wordEls[idx].classList.add('active');
+                            wordEls[idx].classList.remove('spoken');
+                            if (caretEl && wordEls[idx].nextSibling !== caretEl) {
+                                wordEls[idx].after(caretEl);
+                            }
+                        } else if (progress > w.end) {
+                            wordEls[idx].classList.remove('active');
+                            wordEls[idx].classList.add('spoken');
+                        } else {
+                            wordEls[idx].classList.remove('active', 'spoken');
                         }
-                    } else if (progress > w.end) {
-                        wordEls[idx].classList.remove('active');
-                        wordEls[idx].classList.add('spoken');
-                    } else {
-                        wordEls[idx].classList.remove('active', 'spoken');
-                    }
-                });
+                    });
 
-                if (progress >= 0.89 && !preExitTriggered) {
-                    triggerCurrentSceneExit();
-                    const nextIndex = (currentSceneIndex + 1) % scenes.length;
-                    setTimeout(() => {
-                        if (isPlaying) loadScene(nextIndex);
-                    }, 120);
-                } else if (progress >= 1 && !preExitTriggered) {
-                    const nextIndex = (currentSceneIndex + 1) % scenes.length;
-                    loadScene(nextIndex);
+                    if (progress >= 0.89 && !preExitTriggered) {
+                        triggerCurrentSceneExit();
+                        const nextIndex = currentSceneIndex + 1;
+                        setTimeout(() => {
+                            if (isPlaying && !sequenceCompleted) loadScene(nextIndex);
+                        }, 120);
+                    } else if (progress >= 1 && !preExitTriggered) {
+                        loadScene(currentSceneIndex + 1);
+                    }
+                } else {
+                    // লাস্ট সিন (Scene 10): প্রথম 5s সিনের প্রগ্রেস ও কারাওকে পূর্ণ হবে, এরপর আরও 5s স্টিল দাঁড়িয়ে থাকবে
+                    const scene = scenes[currentSceneIndex];
+                    elapsedInScene += delta;
+                    const sceneProgress = Math.min(elapsedInScene / scene.duration, 1);
+                    progressFills[currentSceneIndex].style.width = `${sceneProgress * 100}%`;
+
+                    const wordEls = karaokeCaption.querySelectorAll('.k-word');
+                    const caretEl = karaokeCaption.querySelector('.typing-caret');
+
+                    scene.timedWords.forEach((w, idx) => {
+                        if (sceneProgress >= w.start && sceneProgress <= w.end) {
+                            wordEls[idx].classList.add('active');
+                            wordEls[idx].classList.remove('spoken');
+                            if (caretEl && wordEls[idx].nextSibling !== caretEl) {
+                                wordEls[idx].after(caretEl);
+                            }
+                        } else if (sceneProgress > w.end) {
+                            wordEls[idx].classList.remove('active');
+                            wordEls[idx].classList.add('spoken');
+                        } else {
+                            wordEls[idx].classList.remove('active', 'spoken');
+                        }
+                    });
+
+                    if (sceneProgress >= 1 && caretEl) {
+                        caretEl.remove();
+                    }
+
+                    // এক্সট্রা 5 সেকেন্ড শেষ হলে ব্যাকগ্রাউন্ড সাউন্ড বন্ধ হবে
+                    if (totalElapsedMs >= TOTAL_TIMELINE_MS) {
+                        sequenceCompleted = true;
+                        isPlaying = false;
+                        soundEngine.stopBackgroundMusicAtEnd();
+                        timerPill.textContent = `55s / 55s`;
+                    }
                 }
             }
 
@@ -1614,12 +1597,16 @@
         }
 
         stage169.addEventListener('click', () => {
+            if (sequenceCompleted) return;
             soundEngine.unlock();
             isPlaying = !isPlaying;
             stage169.classList.toggle('paused', !isPlaying);
-            statusText.textContent = isPlaying
-                ? `SCENE ${currentSceneIndex + 1} / ${scenes.length}`
-                : 'PAUSED';
+
+            if (isPlaying) {
+                soundEngine.startBackgroundMusic();
+            } else {
+                soundEngine.pauseBackgroundMusic();
+            }
 
             touchFeedback.textContent = isPlaying ? '▶' : '⏸';
             touchFeedback.classList.add('show');
@@ -1627,15 +1614,6 @@
             feedbackTimeout = setTimeout(() => {
                 touchFeedback.classList.remove('show');
             }, 500);
-        });
-
-        soundToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isSoundOn = soundEngine.toggle();
-            soundToggleBtn.classList.toggle('muted', !isSoundOn);
-            soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
-            soundLabel.textContent = isSoundOn ? 'Sound ON' : 'Sound OFF';
-            if (isSoundOn) soundEngine.playSoftPop(2);
         });
 
         loadScene(0);
