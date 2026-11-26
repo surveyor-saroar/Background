@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - Background Music & Final Hold Stage</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - Dual Click & Background Music Stage</title>
     <style>
         * {
             margin: 0;
@@ -353,6 +353,7 @@
 
         /* ভিন্ন সাইজের কার্ড গ্রিড */
         .cards-grid {
+            position: relative;
             width: 100%;
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -429,14 +430,10 @@
                 transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        /* শেষ সিনে রিং বেলের উপর সাইড থেকে মাউস পয়েন্টার এসে ক্লিক করে ফিরে গিয়ে সম্পূর্ণ ক্লিয়ার হয়ে যাওয়া */
-        .bell-target-card {
-            overflow: visible;
-        }
-
+        /* শেষ সিনে মাউস পয়েন্টার: প্রথমে রিং বেলে ক্লিক, তারপর শেয়ার অপশনে ক্লিক, শেষে ক্লিয়ার */
         .pointer-cursor {
             position: absolute;
-            right: -64px;
+            left: 52%;
             top: 42%;
             width: 34px;
             height: 34px;
@@ -447,48 +444,54 @@
         }
 
         .scene-layer.active .pointer-cursor {
-            animation: pointerClickAndClear 2.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+            animation: dualClickPointer 3.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
         }
 
         .stage-16-9.paused .scene-layer.active .pointer-cursor {
             animation-play-state: paused;
         }
 
-        @keyframes pointerClickAndClear {
+        @keyframes dualClickPointer {
             0% {
                 opacity: 0;
-                transform: translate3d(65px, -14px, 0) scale(1);
+                transform: translate3d(90px, -18px, 0) scale(1);
             }
-            22% {
+            16% {
                 opacity: 1;
                 transform: translate3d(0px, 0px, 0) scale(1);
             }
-            42% {
+            23% {
                 opacity: 1;
-                transform: translate3d(-24px, 4px, 0) scale(1);
+                transform: translate3d(0px, 0px, 0) scale(0.82);
             }
-            50% {
+            29% {
                 opacity: 1;
-                transform: translate3d(-24px, 4px, 0) scale(0.82);
+                transform: translate3d(0px, 0px, 0) scale(1);
             }
-            58% {
+            52% {
                 opacity: 1;
-                transform: translate3d(-24px, 4px, 0) scale(1);
+                transform: translate3d(245px, 6px, 0) scale(1);
             }
-            82% {
-                opacity: 0.6;
-                transform: translate3d(55px, -22px, 0) scale(0.95);
+            59% {
+                opacity: 1;
+                transform: translate3d(245px, 6px, 0) scale(0.82);
+            }
+            65% {
+                opacity: 1;
+                transform: translate3d(245px, 6px, 0) scale(1);
+            }
+            86% {
+                opacity: 0.55;
+                transform: translate3d(315px, -24px, 0) scale(0.95);
             }
             100% {
                 opacity: 0;
-                transform: translate3d(95px, -36px, 0) scale(0.85);
+                transform: translate3d(350px, -38px, 0) scale(0.85);
             }
         }
 
         .click-ripple {
             position: absolute;
-            left: 50%;
-            top: 38%;
             width: 24px;
             height: 24px;
             border-radius: 50%;
@@ -499,8 +502,23 @@
             z-index: 25;
         }
 
-        .scene-layer.active .click-ripple {
-            animation: ripplePulse 0.7s ease-out 1.4s forwards;
+        .ripple-bell {
+            left: 50%;
+            top: 38%;
+        }
+
+        .scene-layer.active .ripple-bell {
+            animation: ripplePulse 0.65s ease-out 1.15s forwards;
+        }
+
+        .ripple-share {
+            left: 50%;
+            top: 38%;
+            border-color: #4ade80;
+        }
+
+        .scene-layer.active .ripple-share {
+            animation: ripplePulse 0.65s ease-out 2.35s forwards;
         }
 
         .stage-16-9.paused .scene-layer.active .click-ripple {
@@ -564,6 +582,26 @@
             display: inline-flex;
             opacity: 1;
             transform: scale(1) translateY(0);
+        }
+
+        /* শেয়ার কার্ড ক্লিক হলে নিচের লেখা সবুজ কালারে পরিবর্তন */
+        .share-target-card.share-clicked {
+            border-color: rgba(74, 222, 128, 0.75);
+            background: rgba(12, 64, 52, 0.55);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .share-desc-text {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.86);
+            line-height: 1.35;
+            transition: color 0.3s ease, transform 0.3s ease, font-weight 0.3s ease;
+        }
+
+        .share-desc-text.green-active {
+            color: #4ade80;
+            font-weight: 700;
+            transform: scale(1.06);
         }
 
         /* বড় লাইভ অ্যানিমেটেড আইকন কন্টেইনার */
@@ -776,12 +814,6 @@
             50%, 100% { opacity: 0.15; }
         }
 
-        .tap-hint {
-            margin-top: 5px;
-            font-size: 0.68rem;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
         .touch-feedback {
             position: absolute;
             top: 50%;
@@ -830,14 +862,13 @@
         <!-- ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স -->
         <footer class="karaoke-box" id="karaokeBox">
             <div class="karaoke-caption" id="karaokeCaption"></div>
-            <div class="tap-hint">স্ক্রিনে টাচ করে প্লে / পজ অটো-টগল করুন</div>
         </footer>
     </main>
 
     <script>
         const USER_PHOTO_URL = "saroar01.png";
-        const BG_MUSIC_URL = "music1";
-        const EXTRA_HOLD_MS = 5000; // লাস্ট সিনের সময় শেষ হওয়ার পর আরও ৫ সেকেন্ড স্টিল
+        const BG_MUSIC_CANDIDATES = ["music1", "music1.mp3", "music1.wav", "music1.ogg", "music1.m4a"];
+        const EXTRA_HOLD_MS = 5000;
 
         /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
         const canvas = document.getElementById('networkCanvas');
@@ -907,14 +938,28 @@
 
         /* ২. Web Audio API সাউন্ড ইঞ্জিন + 5% ব্যাকগ্রাউন্ড মিউজিক */
         class StageSoundEngine {
-            constructor(bgMusicSrc) {
+            constructor(candidates) {
                 this.ctx = null;
-                this.bgAudio = new Audio(bgMusicSrc);
+                this.candidates = candidates;
+                this.candidateIdx = 0;
+                this.bgAudio = new Audio(this.candidates[0]);
                 this.bgAudio.volume = 0.05; // 5% ভলিউম
                 this.bgAudio.loop = true;
                 this.bgAudio.preload = "auto";
-                this.bgStarted = false;
                 this.sequenceFinished = false;
+                this.bindAudioFallback();
+            }
+
+            bindAudioFallback() {
+                this.bgAudio.addEventListener('error', () => {
+                    if (this.sequenceFinished) return;
+                    this.candidateIdx += 1;
+                    if (this.candidateIdx < this.candidates.length) {
+                        this.bgAudio.src = this.candidates[this.candidateIdx];
+                        this.bgAudio.load();
+                        this.startBackgroundMusic();
+                    }
+                });
             }
 
             unlock() {
@@ -925,18 +970,17 @@
                 if (this.ctx.state === 'suspended') {
                     this.ctx.resume();
                 }
+                this.startBackgroundMusic();
             }
 
             startBackgroundMusic() {
                 if (this.sequenceFinished) return;
                 this.bgAudio.volume = 0.05;
-                const playPromise = this.bgAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        this.bgStarted = true;
-                    }).catch(() => {});
-                } else {
-                    this.bgStarted = true;
+                if (this.bgAudio.paused) {
+                    const p = this.bgAudio.play();
+                    if (p && typeof p.catch === 'function') {
+                        p.catch(() => {});
+                    }
                 }
             }
 
@@ -984,7 +1028,7 @@
                 osc.frequency.exponentialRampToValueAtTime(280, now + 0.045);
 
                 gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.22, now + 0.004);
+                gain.gain.linearRampToValueAtTime(0.24, now + 0.004);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
                 osc.connect(gain);
@@ -1055,7 +1099,14 @@
             }
         }
 
-        const soundEngine = new StageSoundEngine(BG_MUSIC_URL);
+        const soundEngine = new StageSoundEngine(BG_MUSIC_CANDIDATES);
+
+        // ব্রাউজার অটোপ্লে পলিসি এড়াতে প্রথম যেকোনো ইন্টারঅ্যাকশনে মিউজিক শুরু করার লিসেনার
+        ['pointerdown', 'keydown', 'click'].forEach((evName) => {
+            window.addEventListener(evName, () => {
+                soundEngine.startBackgroundMusic();
+            }, { once: true, passive: true });
+        });
 
         /* ৩. লাইভ অ্যানিমেটেড SVG আইকন লাইব্রেরি */
         const LIVE_ICONS = {
@@ -1306,7 +1357,7 @@
                 cards: [
                     { iconKey: "bolt", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত স্ক্যান", span: 3, size: "sm" },
                     { iconKey: "bell", title: "পেজ ফলো করে সঙ্গে থাকুন", desc: "নতুন AI ও টেক টিপস সবার আগে পেতে যুক্ত থাকুন", span: 6, size: "lg", hasBellToFollow: true },
-                    { iconKey: "share", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm" }
+                    { iconKey: "share", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm", isShareTarget: true }
                 ],
                 caption: "মাত্র কয়েক সেকেন্ডেই ডকুমেন্ট স্ক্যান করার এই সহজ ট্রিকটি কাজে লাগান। এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন"
             }
@@ -1371,8 +1422,7 @@
                 if (c.hasBellToFollow) {
                     return `
                         <div class="info-card size-${c.size || 'md'} bell-target-card" style="--span: ${c.span || 4};">
-                            <span class="click-ripple"></span>
-                            <span class="pointer-cursor">${MOUSE_POINTER_SVG}</span>
+                            <span class="click-ripple ripple-bell"></span>
                             <div class="bell-state-wrapper">
                                 <div class="bell-before-click" id="bellBeforeClick">
                                     <div class="live-icon-wrap">${LIVE_ICONS.bell}</div>
@@ -1388,6 +1438,17 @@
                     `;
                 }
 
+                if (c.isShareTarget) {
+                    return `
+                        <div class="info-card size-${c.size || 'md'} share-target-card" id="shareTargetCard" style="--span: ${c.span || 4};">
+                            <span class="click-ripple ripple-share"></span>
+                            <div class="live-icon-wrap">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.share}</div>
+                            <div class="card-title">${c.title}</div>
+                            <div class="share-desc-text" id="shareDescText">${c.desc}</div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="info-card size-${c.size || 'md'}" style="--span: ${c.span || 4};">
                         <div class="live-icon-wrap">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.ai}</div>
@@ -1396,6 +1457,10 @@
                     </div>
                 `;
             }).join('');
+
+            const pointerHTML = scene.isEnding
+                ? `<span class="pointer-cursor">${MOUSE_POINTER_SVG}</span>`
+                : '';
 
             const rowClass = scene.isEnding ? 'content-row has-left-photo' : 'content-row';
 
@@ -1410,7 +1475,10 @@
                     </div>
                     <div class="${rowClass}">
                         ${getPhotoBoxHTML(scene)}
-                        <div class="cards-grid">${cardsHTML}</div>
+                        <div class="cards-grid">
+                            ${pointerHTML}
+                            ${cardsHTML}
+                        </div>
                     </div>
                 </div>
             `;
@@ -1478,8 +1546,9 @@
                     popTimers.push(timer);
                 }
 
+                /* শেষ সিনে ডাবল ক্লিক: ১ম ক্লিক রিং বেলে -> ফলো বাটন, ২য় ক্লিক শেয়ার অপশনে -> নিচের লেখা সবুজ */
                 if (scene.isEnding) {
-                    const clickTimer = setTimeout(() => {
+                    const firstClickTimer = setTimeout(() => {
                         if (!isPlaying || sequenceCompleted) return;
                         soundEngine.playMouseClick();
 
@@ -1494,13 +1563,25 @@
                                 followPop.style.transform = 'scale(1) translateY(0)';
                             });
                         }
+                    }, 1150);
+
+                    const secondClickTimer = setTimeout(() => {
+                        if (!isPlaying || sequenceCompleted) return;
+                        soundEngine.playMouseClick();
+
+                        const shareCard = newLayer.querySelector('#shareTargetCard');
+                        const shareDesc = newLayer.querySelector('#shareDescText');
+
+                        if (shareCard) shareCard.classList.add('share-clicked');
+                        if (shareDesc) shareDesc.classList.add('green-active');
 
                         const chimeTimer = setTimeout(() => {
                             if (isPlaying && !sequenceCompleted) soundEngine.playSuccessChime();
-                        }, 140);
+                        }, 120);
                         popTimers.push(chimeTimer);
-                    }, 1520);
-                    popTimers.push(clickTimer);
+                    }, 2350);
+
+                    popTimers.push(firstClickTimer, secondClickTimer);
                 }
             });
 
@@ -1555,7 +1636,6 @@
                         loadScene(currentSceneIndex + 1);
                     }
                 } else {
-                    // লাস্ট সিন (Scene 10): প্রথম 5s সিনের প্রগ্রেস ও কারাওকে পূর্ণ হবে, এরপর আরও 5s স্টিল দাঁড়িয়ে থাকবে
                     const scene = scenes[currentSceneIndex];
                     elapsedInScene += delta;
                     const sceneProgress = Math.min(elapsedInScene / scene.duration, 1);
@@ -1583,7 +1663,6 @@
                         caretEl.remove();
                     }
 
-                    // এক্সট্রা 5 সেকেন্ড শেষ হলে ব্যাকগ্রাউন্ড সাউন্ড বন্ধ হবে
                     if (totalElapsedMs >= TOTAL_TIMELINE_MS) {
                         sequenceCompleted = true;
                         isPlaying = false;
@@ -1620,4 +1699,4 @@
         requestAnimationFrame(tick);
     </script>
 </body>
-</html>
+</html
