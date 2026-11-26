@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>16:9 Transparent Karaoke Stage - Web Audio SFX (No Progress Tick)</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - Highlight & Typing Accent Stage</title>
     <style>
         * {
             margin: 0;
@@ -52,7 +52,7 @@
             cursor: pointer;
         }
 
-        /* উপরের প্রগ্রেস বার ও স্ট্যাটাস */
+        /* উপরের ১০টি সিনের প্রগ্রেস বার ও স্ট্যাটাস */
         .stage-header {
             padding: 12px 20px 4px;
             z-index: 20;
@@ -60,7 +60,7 @@
 
         .progress-bars {
             display: flex;
-            gap: 8px;
+            gap: 5px;
             margin-bottom: 8px;
         }
 
@@ -115,7 +115,21 @@
             50% { transform: scale(1.35); opacity: 0.55; }
         }
 
-        /* সাউন্ড মিউট/আনমিউট টগল বাটন */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timer-pill {
+            background: rgba(3, 18, 24, 0.45);
+            color: #e0f2fe;
+            padding: 4px 11px;
+            border-radius: 99px;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
         .sound-toggle {
             display: inline-flex;
             align-items: center;
@@ -123,9 +137,9 @@
             background: rgba(3, 18, 24, 0.5);
             color: #fef08a;
             border: 1px solid rgba(250, 204, 21, 0.35);
-            padding: 5px 12px;
+            padding: 4px 12px;
             border-radius: 99px;
-            font-size: 0.76rem;
+            font-size: 0.75rem;
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
@@ -142,14 +156,14 @@
             border-color: rgba(148, 163, 184, 0.3);
         }
 
-        /* মাঝখানের স্বচ্ছ সিন এরিয়া (ক্রসফেড/ডিজলভ লেয়ারিংয়ের জন্য) */
+        /* মাঝখানের স্বচ্ছ সিন এরিয়া */
         .visual-viewport {
             flex: 1;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 6px 24px;
+            padding: 4px 24px;
             text-align: center;
         }
 
@@ -161,16 +175,16 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 6px 24px;
+            padding: 4px 24px;
             pointer-events: none;
 
             opacity: 0;
             filter: blur(14px);
             transform: translate3d(38px, 22px, 0) scale(0.91);
             transition:
-                opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+                opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
             will-change: opacity, filter, transform;
         }
 
@@ -189,14 +203,13 @@
 
         .scene-inner {
             width: 100%;
-            max-width: 960px;
+            max-width: 980px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        /* ১টি ব্যাজ (স্ট্যাগার ডিলে: 0.08s) */
         .scene-badge {
             display: inline-block;
             background: #facc15;
@@ -218,13 +231,13 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        /* ১টি হেডিং (স্ট্যাগার ডিলে: 0.14s) */
+        /* টাইটেল ও Highlight Accent (মূল শব্দের নিচে/পেছনে হলুদ হাইলাইট বার) */
         .scene-heading {
             font-size: clamp(1.25rem, 2.3vw, 1.9rem);
             font-weight: 700;
             color: #ffffff;
             text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
-            line-height: 1.25;
+            line-height: 1.3;
             opacity: 0;
             filter: blur(10px);
             transform: translate3d(18px, 12px, 0) scale(0.94);
@@ -237,12 +250,39 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        /* ১টি সাব-টেক্সট (স্ট্যাগার ডিলে: 0.18s) */
+        .accent-highlight {
+            position: relative;
+            display: inline-block;
+            color: #061820;
+            text-shadow: none;
+            padding: 1px 8px;
+            z-index: 1;
+        }
+
+        .accent-highlight::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: #facc15;
+            border-radius: 6px;
+            z-index: -1;
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.24s;
+        }
+
+        .scene-layer.active .accent-highlight::before {
+            transform: scaleX(1);
+        }
+
         .scene-subtext {
-            font-size: clamp(0.85rem, 1.3vw, 1.05rem);
-            color: rgba(240, 249, 255, 0.85);
+            font-size: clamp(0.85rem, 1.25vw, 1.02rem);
+            color: rgba(240, 249, 255, 0.88);
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
-            max-width: 720px;
+            max-width: 740px;
             opacity: 0;
             filter: blur(8px);
             transform: translate3d(0, 14px, 0) scale(0.95);
@@ -255,24 +295,24 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        /* মোট ৪টি কার্ড/বক্স গ্রিড (স্ট্যাগার ডিলে: 0.20s থেকে 0.32s) */
+        /* কার্ড গ্রিড ও ভিজ্যুয়াল ব্যাজ */
         .cards-grid {
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(var(--cols, 4), 1fr);
             gap: 12px;
             margin-top: 6px;
         }
 
         .info-card {
-            background: rgba(6, 36, 48, 0.38);
+            background: rgba(6, 36, 48, 0.42);
             border: 1px solid rgba(250, 204, 21, 0.28);
             border-radius: 14px;
             padding: 12px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             opacity: 0;
             filter: blur(10px);
             transform: translate3d(0, 22px, 0) scale(0.9);
@@ -293,8 +333,15 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        .card-icon {
-            font-size: 1.4rem;
+        .card-visual {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(250, 204, 21, 0.14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
         }
 
         .card-title {
@@ -305,16 +352,16 @@
 
         .card-desc {
             font-size: 0.76rem;
-            color: rgba(255, 255, 255, 0.82);
+            color: rgba(255, 255, 255, 0.85);
             line-height: 1.35;
         }
 
-        /* ১টি নিচের কারাওকে ক্যাপশন বক্স */
+        /* ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স */
         .karaoke-box {
-            margin: 0 24px 16px;
+            margin: 0 24px 14px;
             padding: 10px 18px;
             border-radius: 12px;
-            background: rgba(3, 18, 24, 0.35);
+            background: rgba(3, 18, 24, 0.42);
             text-align: center;
             z-index: 15;
             opacity: 0;
@@ -330,41 +377,90 @@
         }
 
         .karaoke-caption {
-            font-size: clamp(1.15rem, 2.1vw, 1.75rem);
+            font-size: clamp(1.05rem, 1.95vw, 1.62rem);
             font-weight: 700;
-            line-height: 1.45;
-            min-height: 2.5rem;
+            line-height: 1.5;
+            min-height: 2.6rem;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 6px 8px;
+            gap: 5px 7px;
         }
 
+        /* মূল শব্দের নিচে/পেছনে হলুদ হাইলাইট বার + টাইপিং অ্যাকসেন্ট */
         .k-word {
-            color: rgba(255, 255, 255, 0.58);
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            position: relative;
+            color: rgba(255, 255, 255, 0.62);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
             padding: 2px 7px;
             border-radius: 6px;
             background: transparent;
-            transition: background-color 0.14s ease, color 0.14s ease, transform 0.16s ease;
+            z-index: 1;
+            transition: color 0.12s ease, transform 0.16s ease;
             display: inline-block;
+        }
+
+        /* শব্দের পেছনে/নিচে সলিড হলুদ হাইলাইট বার */
+        .k-word::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #facc15;
+            border-radius: 6px;
+            z-index: -1;
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .k-word.spoken {
             color: #ffffff;
         }
 
+        .k-word.spoken::after {
+            transform: scaleX(1);
+            height: 4px;
+            top: auto;
+            bottom: 0;
+            border-radius: 99px;
+        }
+
         .k-word.active {
-            background-color: #facc15;
             color: #061820;
             text-shadow: none;
             transform: scale(1.08) translateY(-2px);
         }
 
+        .k-word.active::after {
+            transform: scaleX(1);
+            height: 100%;
+            border-radius: 6px;
+        }
+
+        /* টাইপিং কার্সর অ্যাকসেন্ট */
+        .typing-caret {
+            display: inline-block;
+            width: 3px;
+            height: 1.15em;
+            background-color: #facc15;
+            margin-left: 3px;
+            vertical-align: middle;
+            border-radius: 2px;
+            animation: caretBlink 0.7s infinite;
+        }
+
+        @keyframes caretBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.15; }
+        }
+
         .tap-hint {
-            margin-top: 6px;
-            font-size: 0.7rem;
+            margin-top: 5px;
+            font-size: 0.68rem;
             color: rgba(255, 255, 255, 0.6);
         }
 
@@ -377,7 +473,7 @@
             width: 68px;
             height: 68px;
             border-radius: 50%;
-            background: rgba(3, 18, 24, 0.7);
+            background: rgba(3, 18, 24, 0.72);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -409,19 +505,22 @@
             <div class="status-row">
                 <div class="status-badge">
                     <span class="pulse-dot"></span>
-                    <span id="statusText">PLAYING</span>
+                    <span id="statusText">SCENE 1 / 10</span>
                 </div>
-                <button type="button" class="sound-toggle" id="soundToggleBtn" aria-label="Sound Toggle">
-                    <span id="soundIcon">🔊</span>
-                    <span id="soundLabel">Sound ON</span>
-                </button>
+                <div class="header-right">
+                    <span class="timer-pill" id="timerPill">00s / 50s</span>
+                    <button type="button" class="sound-toggle" id="soundToggleBtn" aria-label="Sound Toggle">
+                        <span id="soundIcon">🔊</span>
+                        <span id="soundLabel">Sound ON</span>
+                    </button>
+                </div>
             </div>
         </header>
 
         <!-- ক্রসফেড / ডিজলভ ও ফোকাস শিফট ভিউপোর্ট -->
         <section class="visual-viewport" id="visualViewport"></section>
 
-        <!-- ১টি নিচের কারাওকে ক্যাপশন বক্স -->
+        <!-- ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স -->
         <footer class="karaoke-box" id="karaokeBox">
             <div class="karaoke-caption" id="karaokeCaption"></div>
             <div class="tap-hint">স্ক্রিনে টাচ করে প্লে / পজ অটো-টগল করুন</div>
@@ -498,10 +597,7 @@
         animateNetwork();
 
         /* =====================================================================
-           ২. Web Audio API সাউন্ড ইঞ্জিন (প্রোগ্রেস টিক ও ব্যাকগ্রাউন্ড অ্যাম্বিয়েন্স ছাড়া)
-              - সফট পপ / কার্ড এন্ট্রি
-              - ট্রানজিশন সুইপ / হুশ (ফিল্টার্ড নয়েজ)
-              - সাকসেস / চেকমার্ক চিম
+           ২. Web Audio API সাউন্ড ইঞ্জিন (প্রোগ্রেস টিক ও ব্যাকগ্রাউন্ড সাউন্ড ছাড়া)
            ===================================================================== */
         class StageSoundEngine {
             constructor() {
@@ -525,7 +621,6 @@
                 return this.enabled;
             }
 
-            // ১. সফট পপ / কার্ড এন্ট্রি (ব্যাজ, হেডিং ও কার্ড স্ক্রিনে এলে)
             playSoftPop(step = 0) {
                 if (!this.enabled) return;
                 this.unlock();
@@ -548,7 +643,6 @@
                 osc.stop(now + 0.12);
             }
 
-            // ২. ট্রানজিশন সুইপ / হুশ (সিন পরিবর্তনের সময় সূক্ষ্ম ফিল্টার্ড নয়েজ)
             playTransitionWhoosh() {
                 if (!this.enabled) return;
                 this.unlock();
@@ -585,7 +679,6 @@
                 noise.stop(now + duration);
             }
 
-            // ৩. সাকসেস / চেকমার্ক চিম (চক্র বা কমপ্লিশন সম্পন্ন হলে পজিটিভ কম্বিনেশন টোন)
             playSuccessChime() {
                 if (!this.enabled) return;
                 this.unlock();
@@ -614,55 +707,169 @@
 
         const soundEngine = new StageSoundEngine();
 
+        function buildTimedWords(sentence) {
+            const rawWords = sentence.trim().split(/\s+/);
+            const startMargin = 0.05;
+            const endMargin = 0.96;
+            const step = (endMargin - startMargin) / rawWords.length;
+
+            return rawWords.map((word, i) => ({
+                text: word,
+                start: startMargin + i * step,
+                end: startMargin + (i + 1) * step
+            }));
+        }
+
         /* =====================================================================
-           ৩. সিন ডেটা (৪টি কার্ড/বক্স, ১ ব্যাজ, ১ হেডিং, ১ সাব-টেক্সট ও কারাওকে ক্যাপশন)
+           ৩. ১০টি সিন (কার্ড, টাইটেল, ভিজ্যুয়াল ও আইকন + Highlight Accent)
            ===================================================================== */
         const scenes = [
             {
-                badge: "SCENE 01 • OVERVIEW",
-                heading: "স্মার্ট নেটওয়ার্ক ও স্ট্যাগার লেআউট",
-                subtext: "ক্রসফেড, পজিশন শিফট, স্কেল জুম এবং ফোকাস শিফট ট্রানজিশন",
-                duration: 3000,
+                badge: "SCENE 01 • AI HOOK",
+                headingBefore: "AI-এর যুগে ",
+                headingAccent: "দ্রুত ডকুমেন্ট স্ক্যান",
+                headingAfter: "",
+                subtext: "সময় বাঁচিয়ে মাত্র কয়েক সেকেন্ডেই যেকোনো কাগজপত্র ডিজিটাল করুন",
+                duration: 5000,
                 cards: [
-                    { icon: "🔹", title: "কার্ড ০১", desc: "ক্রসফেড ও ডিজলভ" },
-                    { icon: "🔸", title: "কার্ড ০২", desc: "পজিশন শিফট" },
-                    { icon: "🔹", title: "কার্ড ০৩", desc: "স্কেল জুম মোশন" },
-                    { icon: "🔸", title: "কার্ড ০৪", desc: "ফোকাস শিফট ব্লার" }
+                    { visual: "🤖", title: "AI ইঞ্জিন", desc: "স্মার্ট ও অটোমেটিক" },
+                    { visual: "⚡", title: "দ্রুত গতি", desc: "সময় নষ্ট হবে না" },
+                    { visual: "📄", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ডকুমেন্ট" },
+                    { visual: "📲", title: "স্মার্ট ওয়ার্কফ্লো", desc: "সহজ প্রসেস" }
                 ],
-                words: [
-                    { text: "প্রথম", start: 0.06, end: 0.22 },
-                    { text: "সিনে", start: 0.22, end: 0.38 },
-                    { text: "চারটি", start: 0.38, end: 0.56 },
-                    { text: "কার্ড", start: 0.56, end: 0.74 },
-                    { text: "সাজানো", start: 0.74, end: 0.95 }
-                ]
+                caption: "এখন AI-এর যুগ! একটি ডকুমেন্ট স্ক্যান করতে আর সময় নষ্ট করার প্রয়োজন নেই।"
             },
             {
-                badge: "SCENE 02 • FOCUS & ZOOM",
-                heading: "ফোকাস শিফট ও স্কেল জুম ট্রানজিশন",
-                subtext: "ব্লার থেকে শার্প ফোকাস এবং হলুদ সলিড কালারে কারাওকে হাইলাইট",
-                duration: 3000,
+                badge: "SCENE 02 • SMARTPHONE",
+                headingBefore: "হাতের স্মার্টফোনই ",
+                headingAccent: "সহজ স্ক্যানার",
+                headingAfter: "",
+                subtext: "দোকানে বা স্ক্যানারের কাছে যাওয়ার কোনো প্রয়োজন নেই",
+                duration: 5000,
                 cards: [
-                    { icon: "🌫️", title: "ডিজলভ", desc: "স্মুথ অপাসিটি" },
-                    { icon: "↔️", title: "শিফট", desc: "translateX / Y" },
-                    { icon: "🔍", title: "জুম", desc: "ডাইনামিক স্কেল" },
-                    { icon: "🎯", title: "ফোকাস", desc: "শার্প ক্লিয়ারিটি" }
+                    { visual: "📱", title: "মোবাইল ক্যামেরা", desc: "হাতের মুঠোয় সমাধান" },
+                    { visual: "🪪", title: "আইডি ও ফর্ম", desc: "সহজেই স্ক্যান করুন" },
+                    { visual: "🧾", title: "রসিদ ও নোট", desc: "দ্রুত সংরক্ষণ করুন" }
                 ],
-                words: [
-                    { text: "ফোকাস", start: 0.06, end: 0.24 },
-                    { text: "শিফট", start: 0.24, end: 0.44 },
-                    { text: "ও", start: 0.44, end: 0.56 },
-                    { text: "কারাওকে", start: 0.56, end: 0.78 },
-                    { text: "অ্যানিমেশন", start: 0.78, end: 0.96 }
-                ]
+                caption: "আপনার হাতে থাকা স্মার্টফোন দিয়েই খুব সহজে স্ক্যান করতে পারবেন যেকোনো কাগজপত্র।"
+            },
+            {
+                badge: "SCENE 03 • STEP 01",
+                headingBefore: "প্রথমে খুলুন ",
+                headingAccent: "Google Drive",
+                headingAfter: " অ্যাপ",
+                subtext: "আপনার ফোনে থাকা Google Drive অ্যাপটি ওপেন করুন",
+                duration: 5000,
+                cards: [
+                    { visual: "🔺", title: "Drive অ্যাপ", desc: "হোম স্ক্রিন থেকে খুলুন" },
+                    { visual: "☁️", title: "ক্লাউড স্টোরেজ", desc: "ফাইল সুরক্ষিত থাকে" }
+                ],
+                caption: "প্রথমে আপনার ফোনে Google Drive অ্যাপটি ওপেন করুন।"
+            },
+            {
+                badge: "SCENE 04 • STEP 02",
+                headingBefore: "প্লাস (+) থেকে ",
+                headingAccent: "Scan অপশন",
+                headingAfter: " বেছে নিন",
+                subtext: "নিচের প্লাস (+) আইকনে ট্যাপ করে Scan অপশনে ক্লিক করুন",
+                duration: 5000,
+                cards: [
+                    { visual: "➕", title: "প্লাস (+) আইকন", desc: "নিচের ডান কোণায়" },
+                    { visual: "📷", title: "Scan অপশন", desc: "স্ক্যান মোড চালু করুন" }
+                ],
+                caption: "এরপর নিচের প্লাস (+) আইকনে ক্লিক করুন এবং Scan অপশনটি বেছে নিন।"
+            },
+            {
+                badge: "SCENE 05 • STEP 03",
+                headingBefore: "ডকুমেন্ট রাখুন ",
+                headingAccent: "ক্যামেরার সামনে",
+                headingAfter: "",
+                subtext: "ভালো আলো ও পরিষ্কার ফ্রেমে কাগজটি স্থির রাখুন",
+                duration: 5000,
+                cards: [
+                    { visual: "💡", title: "পর্যাপ্ত আলো", desc: "লেখা স্পষ্ট আসবে" },
+                    { visual: "📐", title: "সঠিক অ্যাঙ্গেল", desc: "চার কোণা ফ্রেমে রাখুন" }
+                ],
+                caption: "এবার যে ডকুমেন্টটি স্ক্যান করবেন, সেটি ক্যামেরার সামনে ধরুন।"
+            },
+            {
+                badge: "SCENE 06 • AUTO DETECT",
+                headingBefore: "ছবি তুলুন ও ",
+                headingAccent: "অটো ডিটেক্ট",
+                headingAfter: " দেখুন",
+                subtext: "অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে",
+                duration: 5000,
+                cards: [
+                    { visual: "📸", title: "ক্যাপচার", desc: "ক্যামেরা দিয়ে ছবি তুলুন" },
+                    { visual: "🎯", title: "চারপাশ শনাক্ত", desc: "স্বয়ংক্রিয় বর্ডার সিলেকশন" }
+                ],
+                caption: "ক্যামেরা দিয়ে ছবি তুলুন। অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে।"
+            },
+            {
+                badge: "SCENE 07 • CROP & FILTER",
+                headingBefore: "প্রয়োজনমতো ",
+                headingAccent: "Crop ও ফিল্টার",
+                headingAfter: " ব্যবহার করুন",
+                subtext: "চারপাশ কেটে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার দিন",
+                duration: 5000,
+                cards: [
+                    { visual: "✂️", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন" },
+                    { visual: "🎨", title: "কালার ফিল্টার", desc: "কালার বা সাদা-কালো" }
+                ],
+                caption: "প্রয়োজনে ছবির চারপাশ Crop করে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার ব্যবহার করুন।"
+            },
+            {
+                badge: "SCENE 08 • SAVE",
+                headingBefore: "সব ঠিক থাকলে ",
+                headingAccent: "Save বাটনে",
+                headingAfter: " ক্লিক করুন",
+                subtext: "এক ক্লিকেই আপনার ডকুমেন্টটি সংরক্ষিত হয়ে যাবে",
+                duration: 5000,
+                cards: [
+                    { visual: "🔎", title: "প্রিভিউ চেক", desc: "সব ঠিক আছে কি না দেখুন" },
+                    { visual: "💾", title: "Save করুন", desc: "ডকুমেন্ট সেভ হয়ে যাবে" }
+                ],
+                caption: "সবকিছু ঠিক থাকলে Save বাটনে ক্লিক করুন।"
+            },
+            {
+                badge: "SCENE 09 • PDF & SHARE",
+                headingBefore: "তৈরি হবে ",
+                headingAccent: "PDF ফাইল",
+                headingAfter: " ও শেয়ারিং",
+                subtext: "WhatsApp, Messenger কিংবা ইমেইলে মুহূর্তেই পাঠাতে পারবেন",
+                duration: 5000,
+                cards: [
+                    { visual: "📑", title: "PDF ফাইল", desc: "সহজ ও পরিচ্ছন্ন ফরম্যাট" },
+                    { visual: "💬", title: "WhatsApp / Messenger", desc: "দ্রুত শেয়ার করুন" },
+                    { visual: "📧", title: "ইমেইল", desc: "সহজে পাঠিয়ে দিন" }
+                ],
+                caption: "ব্যস! আপনার ডকুমেন্টটি PDF ফাইলে তৈরি হয়ে যাবে। এখন চাইলে WhatsApp, Messenger কিংবা ইমেইলে পাঠাতে পারবেন।"
+            },
+            {
+                badge: "SCENE 10 • ENDING",
+                headingBefore: "সহজ ট্রিকটি কাজে লাগান ও ",
+                headingAccent: "সঙ্গে থাকুন",
+                headingAfter: "",
+                subtext: "এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন",
+                duration: 5000,
+                isEnding: true,
+                cards: [
+                    { visual: "⏱️", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত ডকুমেন্ট স্ক্যান" },
+                    { visual: "👍", title: "লাইক ও শেয়ার", desc: "সহজ টিপস ছড়িয়ে দিন" },
+                    { visual: "🔔", title: "পেজ ফলো করুন", desc: "নতুন টিপস পেতে যুক্ত থাকুন" }
+                ],
+                caption: "মাত্র কয়েক সেকেন্ডেই ডকুমেন্ট স্ক্যান করার এই সহজ ট্রিকটি কাজে লাগান। এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন"
             }
         ];
+
+        const TOTAL_DURATION = scenes.reduce((sum, s) => sum + s.duration, 0);
 
         const stage169 = document.getElementById('stage169');
         const progressBarsEl = document.getElementById('progressBars');
         const visualViewport = document.getElementById('visualViewport');
         const karaokeCaption = document.getElementById('karaokeCaption');
         const statusText = document.getElementById('statusText');
+        const timerPill = document.getElementById('timerPill');
         const touchFeedback = document.getElementById('touchFeedback');
         const soundToggleBtn = document.getElementById('soundToggleBtn');
         const soundIcon = document.getElementById('soundIcon');
@@ -675,6 +882,7 @@
         let lastTimestamp = null;
         let popTimers = [];
         let feedbackTimeout = null;
+        let endingChimePlayed = false;
 
         scenes.forEach(() => {
             const track = document.createElement('div');
@@ -697,7 +905,7 @@
 
             const cardsHTML = scene.cards.map(c => `
                 <div class="info-card">
-                    <div class="card-icon">${c.icon}</div>
+                    <div class="card-visual">${c.visual}</div>
                     <div class="card-title">${c.title}</div>
                     <div class="card-desc">${c.desc}</div>
                 </div>
@@ -706,9 +914,11 @@
             layer.innerHTML = `
                 <div class="scene-inner">
                     <span class="scene-badge">${scene.badge}</span>
-                    <h1 class="scene-heading">${scene.heading}</h1>
+                    <h1 class="scene-heading">
+                        ${scene.headingBefore}<span class="accent-highlight">${scene.headingAccent}</span>${scene.headingAfter}
+                    </h1>
                     <p class="scene-subtext">${scene.subtext}</p>
-                    <div class="cards-grid">${cardsHTML}</div>
+                    <div class="cards-grid" style="--cols: ${scene.cards.length};">${cardsHTML}</div>
                 </div>
             `;
             return layer;
@@ -717,9 +927,13 @@
         function loadScene(index) {
             currentSceneIndex = index;
             elapsedInScene = 0;
+            endingChimePlayed = false;
             clearPopTimers();
 
             const scene = scenes[index];
+            scene.timedWords = buildTimedWords(scene.caption);
+
+            statusText.textContent = `SCENE ${index + 1} / ${scenes.length}`;
             soundEngine.playTransitionWhoosh();
 
             if (activeLayerEl) {
@@ -728,7 +942,7 @@
                 oldLayer.classList.add('exiting');
                 setTimeout(() => {
                     if (oldLayer.parentNode) oldLayer.remove();
-                }, 700);
+                }, 680);
             }
 
             const newLayer = createSceneLayer(scene);
@@ -737,12 +951,16 @@
 
             stage169.classList.remove('ready');
             karaokeCaption.innerHTML = '';
-            scene.words.forEach((w) => {
+            scene.timedWords.forEach((w) => {
                 const span = document.createElement('span');
                 span.className = 'k-word';
                 span.textContent = w.text;
                 karaokeCaption.appendChild(span);
             });
+
+            const caret = document.createElement('span');
+            caret.className = 'typing-caret';
+            karaokeCaption.appendChild(caret);
 
             void newLayer.offsetWidth;
 
@@ -750,13 +968,22 @@
                 newLayer.classList.add('active');
                 stage169.classList.add('ready');
 
-                const popDelays = [80, 140, 200, 240, 280, 320];
-                popDelays.forEach((delayMs, idx) => {
+                const totalItems = 2 + scene.cards.length;
+                for (let i = 0; i < totalItems; i++) {
+                    const delayMs = 80 + i * 48;
                     const timer = setTimeout(() => {
-                        if (isPlaying) soundEngine.playSoftPop(idx);
+                        if (isPlaying) soundEngine.playSoftPop(i);
                     }, delayMs);
                     popTimers.push(timer);
-                });
+                }
+
+                if (scene.isEnding && !endingChimePlayed) {
+                    endingChimePlayed = true;
+                    const chimeTimer = setTimeout(() => {
+                        if (isPlaying) soundEngine.playSuccessChime();
+                    }, 350);
+                    popTimers.push(chimeTimer);
+                }
             });
 
             progressFills.forEach((fill, i) => {
@@ -776,11 +1003,25 @@
 
                 progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
 
+                const completedBefore = scenes
+                    .slice(0, currentSceneIndex)
+                    .reduce((acc, s) => acc + s.duration, 0);
+                const totalElapsedSec = Math.min(
+                    Math.floor((completedBefore + elapsedInScene) / 1000),
+                    TOTAL_DURATION / 1000
+                );
+                timerPill.textContent = `${String(totalElapsedSec).padStart(2, '0')}s / 50s`;
+
                 const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                scene.words.forEach((w, idx) => {
+                const caretEl = karaokeCaption.querySelector('.typing-caret');
+
+                scene.timedWords.forEach((w, idx) => {
                     if (progress >= w.start && progress <= w.end) {
                         wordEls[idx].classList.add('active');
                         wordEls[idx].classList.remove('spoken');
+                        if (caretEl && wordEls[idx].nextSibling !== caretEl) {
+                            wordEls[idx].after(caretEl);
+                        }
                     } else if (progress > w.end) {
                         wordEls[idx].classList.remove('active');
                         wordEls[idx].classList.add('spoken');
@@ -790,10 +1031,6 @@
                 });
 
                 if (progress >= 1) {
-                    const isCycleCompleted = currentSceneIndex === scenes.length - 1;
-                    if (isCycleCompleted) {
-                        soundEngine.playSuccessChime();
-                    }
                     const nextIndex = (currentSceneIndex + 1) % scenes.length;
                     loadScene(nextIndex);
                 }
@@ -806,7 +1043,9 @@
             soundEngine.unlock();
             isPlaying = !isPlaying;
             stage169.classList.toggle('paused', !isPlaying);
-            statusText.textContent = isPlaying ? 'PLAYING' : 'PAUSED';
+            statusText.textContent = isPlaying
+                ? `SCENE ${currentSceneIndex + 1} / ${scenes.length}`
+                : 'PAUSED';
 
             touchFeedback.textContent = isPlaying ? '▶' : '⏸';
             touchFeedback.classList.add('show');
