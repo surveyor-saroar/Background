@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>16:9 Transparent Karaoke Stage - Web Audio SFX (No Background Ambience)</title>
+    <title>16:9 Transparent Karaoke Stage - Web Audio SFX (No Progress Tick)</title>
     <style>
         * {
             margin: 0;
@@ -498,10 +498,9 @@
         animateNetwork();
 
         /* =====================================================================
-           ২. Web Audio API সাউন্ড ইঞ্জিন (ব্যাকগ্রাউন্ড অ্যাম্বিয়েন্স ছাড়া)
+           ২. Web Audio API সাউন্ড ইঞ্জিন (প্রোগ্রেস টিক ও ব্যাকগ্রাউন্ড অ্যাম্বিয়েন্স ছাড়া)
               - সফট পপ / কার্ড এন্ট্রি
               - ট্রানজিশন সুইপ / হুশ (ফিল্টার্ড নয়েজ)
-              - কাউন্টার / প্রোগ্রেস টিক
               - সাকসেস / চেকমার্ক চিম
            ===================================================================== */
         class StageSoundEngine {
@@ -586,35 +585,12 @@
                 noise.stop(now + duration);
             }
 
-            // ৩. কাউন্টার / প্রোগ্রেস টিক (প্রোগ্রেস বার এগোনোর সাথে সামঞ্জস্যপূর্ণ হালকা টিক/রাইজ)
-            playProgressTick(stepIndex = 0) {
-                if (!this.enabled) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                const freq = 620 + stepIndex * 65;
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, now);
-                osc.frequency.exponentialRampToValueAtTime(freq * 1.18, now + 0.045);
-
-                gain.gain.setValueAtTime(0.0008, now);
-                gain.gain.linearRampToValueAtTime(0.055, now + 0.007);
-                gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.055);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.06);
-            }
-
-            // ৪. সাকসেস / চেকমার্ক চিম (চক্র বা কমপ্লিশন সম্পন্ন হলে পজিটিভ কম্বিনেশন টোন)
+            // ৩. সাকসেস / চেকমার্ক চিম (চক্র বা কমপ্লিশন সম্পন্ন হলে পজিটিভ কম্বিনেশন টোন)
             playSuccessChime() {
                 if (!this.enabled) return;
                 this.unlock();
                 const now = this.ctx.currentTime;
-                const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 পজিটিভ মেজর চিম
+                const notes = [523.25, 659.25, 783.99];
 
                 notes.forEach((freq, idx) => {
                     const startAt = now + idx * 0.085;
@@ -697,7 +673,6 @@
         let isPlaying = true;
         let elapsedInScene = 0;
         let lastTimestamp = null;
-        let lastTickMilestone = 0;
         let popTimers = [];
         let feedbackTimeout = null;
 
@@ -742,12 +717,9 @@
         function loadScene(index) {
             currentSceneIndex = index;
             elapsedInScene = 0;
-            lastTickMilestone = 0;
             clearPopTimers();
 
             const scene = scenes[index];
-
-            // ট্রানজিশন সুইপ / হুশ সাউন্ড
             soundEngine.playTransitionWhoosh();
 
             if (activeLayerEl) {
@@ -778,7 +750,6 @@
                 newLayer.classList.add('active');
                 stage169.classList.add('ready');
 
-                // স্ট্যাগার ডিলে অনুযায়ী সফট পপ / কার্ড এন্ট্রি সাউন্ড
                 const popDelays = [80, 140, 200, 240, 280, 320];
                 popDelays.forEach((delayMs, idx) => {
                     const timer = setTimeout(() => {
@@ -805,13 +776,6 @@
 
                 progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
 
-                // প্রোগ্রেস বার এগোনোর সাথে কাউন্টার / প্রোগ্রেস টিক (প্রতি 25% ধাপে)
-                const milestone = Math.floor(progress * 4);
-                if (milestone > lastTickMilestone && milestone <= 4) {
-                    lastTickMilestone = milestone;
-                    soundEngine.playProgressTick(milestone);
-                }
-
                 const wordEls = karaokeCaption.querySelectorAll('.k-word');
                 scene.words.forEach((w, idx) => {
                     if (progress >= w.start && progress <= w.end) {
@@ -828,19 +792,14 @@
                 if (progress >= 1) {
                     const isCycleCompleted = currentSceneIndex === scenes.length - 1;
                     if (isCycleCompleted) {
-                        // সব সিন সম্পন্ন হলে সাকসেস / চেকমার্ক চিম
                         soundEngine.playSuccessChime();
                     }
-                    const nextIndex = (currentSlideOrSceneNext(currentSceneIndex, scenes.length));
+                    const nextIndex = (currentSceneIndex + 1) % scenes.length;
                     loadScene(nextIndex);
                 }
             }
 
             requestAnimationFrame(tick);
-        }
-
-        function currentSlideOrSceneNext(curr, total) {
-            return (curr + 1) % total;
         }
 
         stage169.addEventListener('click', () => {
