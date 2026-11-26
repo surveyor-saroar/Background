@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>16:9 Transparent Karaoke Stage - 3s Scene & Slow 45deg Scan</title>
+    <title>16:9 Transparent Karaoke Stage - Crossfade, Translate, Scale & Focus Shift</title>
     <style>
         * {
             margin: 0;
@@ -52,52 +52,16 @@
             cursor: pointer;
         }
 
-        /* ৪৫ ডিগ্রি কোণে ধীরগতির ও মসৃণ স্ক্যানিং লাইন অ্যানিমেশন */
-        .scan-line {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 220%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #facc15, #fef08a, #facc15, transparent);
-            box-shadow: 0 0 16px rgba(250, 204, 21, 0.9);
-            opacity: 0;
-            pointer-events: none;
-            z-index: 5;
-            transform: translate(-115%, -115%) rotate(45deg);
-        }
-
-        .scan-line.scanning {
-            animation: scanSweep45 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes scanSweep45 {
-            0% {
-                transform: translate(-115%, -115%) rotate(45deg);
-                opacity: 0;
-            }
-            12% {
-                opacity: 0.95;
-            }
-            88% {
-                opacity: 0.95;
-            }
-            100% {
-                transform: translate(15%, 15%) rotate(45deg);
-                opacity: 0;
-            }
-        }
-
         /* উপরের প্রগ্রেস বার ও স্ট্যাটাস */
         .stage-header {
-            padding: 14px 20px 6px;
+            padding: 12px 20px 4px;
             z-index: 20;
         }
 
         .progress-bars {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .progress-track {
@@ -126,9 +90,9 @@
             align-items: center;
             gap: 7px;
             background: rgba(3, 18, 24, 0.45);
-            padding: 5px 12px;
+            padding: 4px 12px;
             border-radius: 99px;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: #fef9c3;
         }
@@ -151,107 +115,221 @@
             50% { transform: scale(1.35); opacity: 0.55; }
         }
 
-        /* মাঝখানের স্বচ্ছ স্লাইড ও পপ-আপ অ্যানিমেশন এরিয়া */
+        /* মাঝখানের স্বচ্ছ সিন এরিয়া (ক্রসফেড/ডিজলভ লেয়ারিংয়ের জন্য) */
         .visual-viewport {
             flex: 1;
             position: relative;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 12px 24px;
+            padding: 6px 24px;
             text-align: center;
         }
 
-        /* স্লাইড এন্ট্রান্স আরও মসৃণ ও ধীরগতির করা হয়েছে */
-        .slide-card {
+        /* =====================================================================
+           ট্রানজিশন টাইপ:
+           ১. ক্রসফেড/ডিজলভ (opacity)
+           ২. পজিশন শিফট (translateX / translateY)
+           ৩. স্কেল জুম (scale)
+           ৪. ফোকাস শিফট (filter: blur)
+           ===================================================================== */
+        .scene-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 24px;
+            pointer-events: none;
+
+            /* প্রাথমিক (এন্টারিং) অবস্থা: ঝাপসা, ছোট ও ডান/নিচে সরে থাকা */
+            opacity: 0;
+            filter: blur(14px);
+            transform: translate3d(38px, 22px, 0) scale(0.91);
+            transition:
+                opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: opacity, filter, transform;
+        }
+
+        /* সক্রিয় (ফোকাসড) অবস্থা */
+        .scene-layer.active {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
+            pointer-events: auto;
+        }
+
+        /* বিদায়ী (ক্রসফেড/ডিজলভ আউট + ফোকাস আউট + স্কেল জুম ইন/শিফট) অবস্থা */
+        .scene-layer.exiting {
+            opacity: 0;
+            filter: blur(16px);
+            transform: translate3d(-38px, -18px, 0) scale(1.06);
+        }
+
+        .scene-inner {
+            width: 100%;
+            max-width: 960px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            opacity: 0;
-            transform: translateY(36px) scale(0.94);
-            transition: opacity 1.35s cubic-bezier(0.16, 1, 0.3, 1), transform 1.55s cubic-bezier(0.16, 1, 0.3, 1);
+            gap: 10px;
         }
 
-        .slide-card.active {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        .popup-chip {
+        /* ১টি ব্যাজ (স্ট্যাগার ডিলে: 0.08s) */
+        .scene-badge {
             display: inline-block;
             background: #facc15;
-            color: #091820;
-            font-size: 0.78rem;
+            color: #061820;
+            font-size: 0.74rem;
             font-weight: 800;
             letter-spacing: 1px;
-            padding: 5px 14px;
+            padding: 4px 14px;
             border-radius: 99px;
-            transform: translateY(10px) scale(0.75);
             opacity: 0;
-            transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+            filter: blur(8px);
+            transform: translate3d(-16px, 10px, 0) scale(0.88);
+            transition: all 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
         }
 
-        .popup-chip.pop {
-            transform: translateY(0) scale(1);
+        .scene-layer.active .scene-badge {
             opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
         }
 
-        .visual-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
-            background: rgba(250, 204, 21, 0.16);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2.1rem;
-            transform: translateY(14px) scale(0.78);
-            opacity: 0;
-            transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.18s, opacity 0.9s ease 0.18s;
-        }
-
-        .visual-icon.pop {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-
-        .slide-title {
-            font-size: clamp(1.35rem, 2.6vw, 2.2rem);
+        /* ১টি হেডিং (স্ট্যাগার ডিলে: 0.14s) */
+        .scene-heading {
+            font-size: clamp(1.25rem, 2.3vw, 1.9rem);
             font-weight: 700;
             color: #ffffff;
             text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
             line-height: 1.25;
+            opacity: 0;
+            filter: blur(10px);
+            transform: translate3d(18px, 12px, 0) scale(0.94);
+            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s;
         }
 
-        /* স্বচ্ছ কারাওকে ক্যাপশন - হলুদ সলিড কালার হাইলাইট */
-        .karaoke-container {
-            padding: 12px 24px 22px;
-            background: transparent;
+        .scene-layer.active .scene-heading {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        /* ১টি সাব-টেক্সট (স্ট্যাগার ডিলে: 0.18s) */
+        .scene-subtext {
+            font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+            color: rgba(240, 249, 255, 0.85);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+            max-width: 720px;
+            opacity: 0;
+            filter: blur(8px);
+            transform: translate3d(0, 14px, 0) scale(0.95);
+            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
+        }
+
+        .scene-layer.active .scene-subtext {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        /* মোট ৪টি কার্ড/বক্স গ্রিড (স্ট্যাগার ডিলে: 0.20s থেকে 0.32s) */
+        .cards-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .info-card {
+            background: rgba(6, 36, 48, 0.38);
+            border: 1px solid rgba(250, 204, 21, 0.28);
+            border-radius: 14px;
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            filter: blur(10px);
+            transform: translate3d(0, 22px, 0) scale(0.9);
+            transition:
+                opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .info-card:nth-child(1) { transition-delay: 0.20s; transform: translate3d(-16px, 20px, 0) scale(0.9); }
+        .info-card:nth-child(2) { transition-delay: 0.24s; transform: translate3d(-6px, 22px, 0) scale(0.9); }
+        .info-card:nth-child(3) { transition-delay: 0.28s; transform: translate3d(6px, 22px, 0) scale(0.9); }
+        .info-card:nth-child(4) { transition-delay: 0.32s; transform: translate3d(16px, 20px, 0) scale(0.9); }
+
+        .scene-layer.active .info-card {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        .card-icon {
+            font-size: 1.4rem;
+        }
+
+        .card-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #fef08a;
+        }
+
+        .card-desc {
+            font-size: 0.76rem;
+            color: rgba(255, 255, 255, 0.82);
+            line-height: 1.35;
+        }
+
+        /* ১টি নিচের কারাওকে ক্যাপশন বক্স (হলুদ সলিড কালার হাইলাইট + ফোকাস ও পজিশন শিফট) */
+        .karaoke-box {
+            margin: 0 24px 16px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: rgba(3, 18, 24, 0.35);
             text-align: center;
             z-index: 15;
+            opacity: 0;
+            filter: blur(8px);
+            transform: translate3d(0, 16px, 0) scale(0.95);
+            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.32s;
+        }
+
+        .stage-16-9.ready .karaoke-box {
+            opacity: 1;
+            filter: blur(0px);
+            transform: translate3d(0, 0, 0) scale(1);
         }
 
         .karaoke-caption {
-            font-size: clamp(1.35rem, 2.5vw, 2.15rem);
+            font-size: clamp(1.15rem, 2.1vw, 1.75rem);
             font-weight: 700;
-            line-height: 1.5;
-            min-height: 3.4rem;
+            line-height: 1.45;
+            min-height: 2.5rem;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 8px 10px;
+            gap: 6px 8px;
         }
 
         .k-word {
-            color: rgba(255, 255, 255, 0.55);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-            padding: 2px 8px;
+            color: rgba(255, 255, 255, 0.58);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            padding: 2px 7px;
             border-radius: 6px;
             background: transparent;
-            transition: background-color 0.15s ease, color 0.15s ease, transform 0.18s ease;
+            transition: background-color 0.14s ease, color 0.14s ease, transform 0.16s ease;
             display: inline-block;
         }
 
@@ -259,7 +337,6 @@
             color: #ffffff;
         }
 
-        /* হলুদ সলিড কালার দিয়ে হাইলাইট */
         .k-word.active {
             background-color: #facc15;
             color: #061820;
@@ -268,10 +345,9 @@
         }
 
         .tap-hint {
-            margin-top: 8px;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.65);
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+            margin-top: 6px;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         /* প্লে/পজ টাচ ফিডব্যাক */
@@ -306,9 +382,8 @@
     <!-- নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস -->
     <canvas id="networkCanvas"></canvas>
 
-    <!-- ঠিক মাঝখানে বর্ডার ছাড়া 16:9 স্টেজ -->
+    <!-- ঠিক মাঝখানে বর্ডার ও ব্যাকগ্রাউন্ড ফিল ছাড়া 16:9 স্টেজ -->
     <main class="stage-16-9" id="stage169">
-        <div class="scan-line" id="scanLine"></div>
         <div class="touch-feedback" id="touchFeedback">⏸</div>
 
         <header class="stage-header">
@@ -321,15 +396,11 @@
             </div>
         </header>
 
-        <section class="visual-viewport">
-            <div class="slide-card" id="slideCard">
-                <span class="popup-chip" id="popupChip"></span>
-                <div class="visual-icon" id="visualIcon"></div>
-                <h2 class="slide-title" id="slideTitle"></h2>
-            </div>
-        </section>
+        <!-- ক্রসফেড / ডিজলভ ও ফোকাস শিফট ভিউপোর্ট -->
+        <section class="visual-viewport" id="visualViewport"></section>
 
-        <footer class="karaoke-container">
+        <!-- ১টি নিচের কারাওকে ক্যাপশন বক্স -->
+        <footer class="karaoke-box" id="karaokeBox">
             <div class="karaoke-caption" id="karaokeCaption"></div>
             <div class="tap-hint">স্ক্রিনে টাচ করে প্লে / পজ অটো-টগল করুন</div>
         </footer>
@@ -402,55 +473,63 @@
         initNetwork();
         animateNetwork();
 
-        /* ২. স্লাইড ও কারাওকে ক্যাপশন ডেটা (প্রতিটি সিন ৩ সেকেন্ড / 3000ms) */
-        const slides = [
+        /* ২. সিন ডেটা (৪টি কার্ড/বক্স, ১ ব্যাজ, ১ হেডিং, ১ সাব-টেক্সট ও কারাওকে ক্যাপশন) */
+        const scenes = [
             {
-                badge: "SCENE 01 • 45° SCAN",
-                icon: "🔗",
-                title: "স্মার্ট নেটওয়ার্ক আর্কিটেকচার",
+                badge: "SCENE 01 • OVERVIEW",
+                heading: "স্মার্ট নেটওয়ার্ক ও স্ট্যাগার লেআউট",
+                subtext: "ক্রসফেড, পজিশন শিফট, স্কেল জুম এবং ফোকাস শিফট ট্রানজিশন",
                 duration: 3000,
+                cards: [
+                    { icon: "🔹", title: "কার্ড ০১", desc: "ক্রসফেড ও ডিজলভ" },
+                    { icon: "🔸", title: "কার্ড ০২", desc: "পজিশন শিফট" },
+                    { icon: "🔹", title: "কার্ড ০৩", desc: "স্কেল জুম মোশন" },
+                    { icon: "🔸", title: "কার্ড ০৪", desc: "ফোকাস শিফট ব্লার" }
+                ],
                 words: [
-                    { text: "প্রতিটি", start: 0.05, end: 0.20 },
-                    { text: "নেটওয়ার্ক", start: 0.20, end: 0.40 },
-                    { text: "নোড", start: 0.40, end: 0.58 },
-                    { text: "স্বচ্ছভাবে", start: 0.58, end: 0.78 },
-                    { text: "যুক্ত", start: 0.78, end: 0.96 }
+                    { text: "প্রথম", start: 0.06, end: 0.22 },
+                    { text: "সিনে", start: 0.22, end: 0.38 },
+                    { text: "চারটি", start: 0.38, end: 0.56 },
+                    { text: "কার্ড", start: 0.56, end: 0.74 },
+                    { text: "সাজানো", start: 0.74, end: 0.95 }
                 ]
             },
             {
-                badge: "SCENE 02 • POP-UP & KARAOKE",
-                icon: "⚡",
-                title: "হলুদ হাইলাইট কারাওকে অ্যানিমেশন",
+                badge: "SCENE 02 • FOCUS & ZOOM",
+                heading: "ফোকাস শিফট ও স্কেল জুম ট্রানজিশন",
+                subtext: "ব্লার থেকে শার্প ফোকাস এবং হলুদ সলিড কালারে কারাওকে হাইলাইট",
                 duration: 3000,
+                cards: [
+                    { icon: "🌫️", title: "ডিজলভ", desc: "স্মুথ অপাসিটি" },
+                    { icon: "↔️", title: "শিফট", desc: "translateX / Y" },
+                    { icon: "🔍", title: "জুম", desc: "ডাইনামিক স্কেল" },
+                    { icon: "🎯", title: "ফোকাস", desc: "শার্প ক্লিয়ারিটি" }
+                ],
                 words: [
-                    { text: "স্লাইড,", start: 0.05, end: 0.22 },
-                    { text: "স্ক্যান", start: 0.22, end: 0.42 },
-                    { text: "ও", start: 0.42, end: 0.54 },
-                    { text: "পপ-আপ", start: 0.54, end: 0.76 },
-                    { text: "কারাওকে", start: 0.76, end: 0.96 }
+                    { text: "ফোকাস", start: 0.06, end: 0.24 },
+                    { text: "শিফট", start: 0.24, end: 0.44 },
+                    { text: "ও", start: 0.44, end: 0.56 },
+                    { text: "কারাওকে", start: 0.56, end: 0.78 },
+                    { text: "অ্যানিমেশন", start: 0.78, end: 0.96 }
                 ]
             }
         ];
 
         const stage169 = document.getElementById('stage169');
         const progressBarsEl = document.getElementById('progressBars');
-        const slideCard = document.getElementById('slideCard');
-        const popupChip = document.getElementById('popupChip');
-        const visualIcon = document.getElementById('visualIcon');
-        const slideTitle = document.getElementById('slideTitle');
+        const visualViewport = document.getElementById('visualViewport');
         const karaokeCaption = document.getElementById('karaokeCaption');
-        const scanLine = document.getElementById('scanLine');
         const statusText = document.getElementById('statusText');
         const touchFeedback = document.getElementById('touchFeedback');
 
-        let currentSlideIndex = 0;
+        let currentSceneIndex = 0;
+        let activeLayerEl = null;
         let isPlaying = true;
-        let elapsedInSlide = 0;
+        let elapsedInScene = 0;
         let lastTimestamp = null;
-        let popupTimeout = null;
         let feedbackTimeout = null;
 
-        slides.forEach(() => {
+        scenes.forEach(() => {
             const track = document.createElement('div');
             track.className = 'progress-track';
             const fill = document.createElement('div');
@@ -460,37 +539,65 @@
         });
         const progressFills = document.querySelectorAll('.progress-fill');
 
-        function loadSlide(index) {
-            currentSlideIndex = index;
-            elapsedInSlide = 0;
-            const slide = slides[index];
+        function createSceneLayer(scene) {
+            const layer = document.createElement('div');
+            layer.className = 'scene-layer';
 
-            slideCard.classList.remove('active');
-            popupChip.classList.remove('pop');
-            visualIcon.classList.remove('pop');
-            scanLine.classList.remove('scanning');
-            void slideCard.offsetWidth;
+            const cardsHTML = scene.cards.map(c => `
+                <div class="info-card">
+                    <div class="card-icon">${c.icon}</div>
+                    <div class="card-title">${c.title}</div>
+                    <div class="card-desc">${c.desc}</div>
+                </div>
+            `).join('');
 
-            popupChip.textContent = slide.badge;
-            visualIcon.textContent = slide.icon;
-            slideTitle.textContent = slide.title;
+            layer.innerHTML = `
+                <div class="scene-inner">
+                    <span class="scene-badge">${scene.badge}</span>
+                    <h1 class="scene-heading">${scene.heading}</h1>
+                    <p class="scene-subtext">${scene.subtext}</p>
+                    <div class="cards-grid">${cardsHTML}</div>
+                </div>
+            `;
+            return layer;
+        }
 
+        function loadScene(index) {
+            currentSceneIndex = index;
+            elapsedInScene = 0;
+            const scene = scenes[index];
+
+            // আগের সিন থাকলে সেটিকে ক্রসফেড/ডিজলভ + ফোকাস আউট + স্কেল জুম করে বিদায় দেওয়া
+            if (activeLayerEl) {
+                const oldLayer = activeLayerEl;
+                oldLayer.classList.remove('active');
+                oldLayer.classList.add('exiting');
+                setTimeout(() => {
+                    if (oldLayer.parentNode) oldLayer.remove();
+                }, 700);
+            }
+
+            // নতুন সিন লেয়ার তৈরি ও যোগ করা
+            const newLayer = createSceneLayer(scene);
+            visualViewport.appendChild(newLayer);
+            activeLayerEl = newLayer;
+
+            // কারাওকে ক্যাপশন আপডেট
+            stage169.classList.remove('ready');
             karaokeCaption.innerHTML = '';
-            slide.words.forEach((w) => {
+            scene.words.forEach((w) => {
                 const span = document.createElement('span');
                 span.className = 'k-word';
                 span.textContent = w.text;
                 karaokeCaption.appendChild(span);
             });
 
-            slideCard.classList.add('active');
-            scanLine.classList.add('scanning');
+            void newLayer.offsetWidth;
 
-            clearTimeout(popupTimeout);
-            popupTimeout = setTimeout(() => {
-                popupChip.classList.add('pop');
-                visualIcon.classList.add('pop');
-            }, 450);
+            requestAnimationFrame(() => {
+                newLayer.classList.add('active');
+                stage169.classList.add('ready');
+            });
 
             progressFills.forEach((fill, i) => {
                 fill.style.width = i < index ? '100%' : '0%';
@@ -503,14 +610,14 @@
             lastTimestamp = timestamp;
 
             if (isPlaying) {
-                const slide = slides[currentSlideIndex];
-                elapsedInSlide += delta;
-                const progress = Math.min(elapsedInSlide / slide.duration, 1);
+                const scene = scenes[currentSceneIndex];
+                elapsedInScene += delta;
+                const progress = Math.min(elapsedInScene / scene.duration, 1);
 
-                progressFills[currentSlideIndex].style.width = `${progress * 100}%`;
+                progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
 
                 const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                slide.words.forEach((w, idx) => {
+                scene.words.forEach((w, idx) => {
                     if (progress >= w.start && progress <= w.end) {
                         wordEls[idx].classList.add('active');
                         wordEls[idx].classList.remove('spoken');
@@ -523,8 +630,8 @@
                 });
 
                 if (progress >= 1) {
-                    const nextIndex = (currentSlideIndex + 1) % slides.length;
-                    loadSlide(nextIndex);
+                    const nextIndex = (currentSceneIndex + 1) % scenes.length;
+                    loadScene(nextIndex);
                 }
             }
 
@@ -544,7 +651,7 @@
             }, 500);
         });
 
-        loadSlide(0);
+        loadScene(0);
         requestAnimationFrame(tick);
     </script>
 </body>
