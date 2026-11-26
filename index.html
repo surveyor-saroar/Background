@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>16:9 Transparent Karaoke Stage - Network Nodes</title>
+    <title>16:9 Transparent Karaoke Stage - 45deg Scan Transition</title>
     <style>
         * {
             margin: 0;
@@ -52,28 +52,40 @@
             cursor: pointer;
         }
 
-        /* স্ক্যানিং লাইন অ্যানিমেশন */
+        /* ৪৫ ডিগ্রি কোণে স্ক্যানিং লাইন অ্যানিমেশন */
         .scan-line {
             position: absolute;
-            left: 0;
-            width: 100%;
-            height: 2px;
+            top: 50%;
+            left: 50%;
+            width: 220%;
+            height: 3px;
             background: linear-gradient(90deg, transparent, #facc15, #fef08a, #facc15, transparent);
-            box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+            box-shadow: 0 0 14px rgba(250, 204, 21, 0.85);
             opacity: 0;
             pointer-events: none;
             z-index: 5;
+            transform: translate(-115%, -115%) rotate(45deg);
         }
 
         .scan-line.scanning {
-            animation: scanSweep 1.1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+            animation: scanSweep45 1.15s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
         }
 
-        @keyframes scanSweep {
-            0% { top: 0%; opacity: 0; }
-            15% { opacity: 0.9; }
-            85% { opacity: 0.9; }
-            100% { top: 100%; opacity: 0; }
+        @keyframes scanSweep45 {
+            0% {
+                transform: translate(-115%, -115%) rotate(45deg);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.95;
+            }
+            85% {
+                opacity: 0.95;
+            }
+            100% {
+                transform: translate(15%, 15%) rotate(45deg);
+                opacity: 0;
+            }
         }
 
         /* উপরের প্রগ্রেস বার ও স্ট্যাটাস */
@@ -392,7 +404,7 @@
         /* ২. স্লাইড ও কারাওকে ক্যাপশন ডেটা (সাউন্ড ছাড়া) */
         const slides = [
             {
-                badge: "SCENE 01 • SLIDE & SCAN",
+                badge: "SCENE 01 • 45° SCAN",
                 icon: "🔗",
                 title: "স্মার্ট নেটওয়ার্ক আর্কিটেকচার",
                 duration: 4400,
@@ -520,7 +532,6 @@
             requestAnimationFrame(tick);
         }
 
-        /* স্ক্রিন টাচ / ক্লিক প্লে-পজ অটো-টগল */
         stage169.addEventListener('click', () => {
             isPlaying = !isPlaying;
             stage169.classList.toggle('paused', !isPlaying);
