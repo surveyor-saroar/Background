@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>16:9 Transparent Karaoke Stage - Crossfade, Translate, Scale & Focus Shift</title>
+    <title>16:9 Transparent Karaoke Stage - Web Audio SFX (No Background Ambience)</title>
     <style>
         * {
             margin: 0;
@@ -115,6 +115,33 @@
             50% { transform: scale(1.35); opacity: 0.55; }
         }
 
+        /* সাউন্ড মিউট/আনমিউট টগল বাটন */
+        .sound-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(3, 18, 24, 0.5);
+            color: #fef08a;
+            border: 1px solid rgba(250, 204, 21, 0.35);
+            padding: 5px 12px;
+            border-radius: 99px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+            z-index: 30;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(3, 18, 24, 0.75);
+            transform: scale(1.04);
+        }
+
+        .sound-toggle.muted {
+            color: #94a3b8;
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+
         /* মাঝখানের স্বচ্ছ সিন এরিয়া (ক্রসফেড/ডিজলভ লেয়ারিংয়ের জন্য) */
         .visual-viewport {
             flex: 1;
@@ -126,13 +153,7 @@
             text-align: center;
         }
 
-        /* =====================================================================
-           ট্রানজিশন টাইপ:
-           ১. ক্রসফেড/ডিজলভ (opacity)
-           ২. পজিশন শিফট (translateX / translateY)
-           ৩. স্কেল জুম (scale)
-           ৪. ফোকাস শিফট (filter: blur)
-           ===================================================================== */
+        /* ট্রানজিশন টাইপ: ক্রসফেড/ডিজলভ + পজিশন শিফট + স্কেল জুম + ফোকাস শিফট */
         .scene-layer {
             position: absolute;
             inset: 0;
@@ -143,7 +164,6 @@
             padding: 6px 24px;
             pointer-events: none;
 
-            /* প্রাথমিক (এন্টারিং) অবস্থা: ঝাপসা, ছোট ও ডান/নিচে সরে থাকা */
             opacity: 0;
             filter: blur(14px);
             transform: translate3d(38px, 22px, 0) scale(0.91);
@@ -154,7 +174,6 @@
             will-change: opacity, filter, transform;
         }
 
-        /* সক্রিয় (ফোকাসড) অবস্থা */
         .scene-layer.active {
             opacity: 1;
             filter: blur(0px);
@@ -162,7 +181,6 @@
             pointer-events: auto;
         }
 
-        /* বিদায়ী (ক্রসফেড/ডিজলভ আউট + ফোকাস আউট + স্কেল জুম ইন/শিফট) অবস্থা */
         .scene-layer.exiting {
             opacity: 0;
             filter: blur(16px);
@@ -291,7 +309,7 @@
             line-height: 1.35;
         }
 
-        /* ১টি নিচের কারাওকে ক্যাপশন বক্স (হলুদ সলিড কালার হাইলাইট + ফোকাস ও পজিশন শিফট) */
+        /* ১টি নিচের কারাওকে ক্যাপশন বক্স */
         .karaoke-box {
             margin: 0 24px 16px;
             padding: 10px 18px;
@@ -393,6 +411,10 @@
                     <span class="pulse-dot"></span>
                     <span id="statusText">PLAYING</span>
                 </div>
+                <button type="button" class="sound-toggle" id="soundToggleBtn" aria-label="Sound Toggle">
+                    <span id="soundIcon">🔊</span>
+                    <span id="soundLabel">Sound ON</span>
+                </button>
             </div>
         </header>
 
@@ -407,7 +429,9 @@
     </main>
 
     <script>
-        /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
+        /* =====================================================================
+           ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস
+           ===================================================================== */
         const canvas = document.getElementById('networkCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, nodes = [];
@@ -473,7 +497,150 @@
         initNetwork();
         animateNetwork();
 
-        /* ২. সিন ডেটা (৪টি কার্ড/বক্স, ১ ব্যাজ, ১ হেডিং, ১ সাব-টেক্সট ও কারাওকে ক্যাপশন) */
+        /* =====================================================================
+           ২. Web Audio API সাউন্ড ইঞ্জিন (ব্যাকগ্রাউন্ড অ্যাম্বিয়েন্স ছাড়া)
+              - সফট পপ / কার্ড এন্ট্রি
+              - ট্রানজিশন সুইপ / হুশ (ফিল্টার্ড নয়েজ)
+              - কাউন্টার / প্রোগ্রেস টিক
+              - সাকসেস / চেকমার্ক চিম
+           ===================================================================== */
+        class StageSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            unlock() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggle() {
+                this.unlock();
+                this.enabled = !this.enabled;
+                return this.enabled;
+            }
+
+            // ১. সফট পপ / কার্ড এন্ট্রি (ব্যাজ, হেডিং ও কার্ড স্ক্রিনে এলে)
+            playSoftPop(step = 0) {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                const baseFreq = 360 + Math.min(step, 5) * 42;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.65, now + 0.085);
+
+                gain.gain.setValueAtTime(0.0008, now);
+                gain.gain.linearRampToValueAtTime(0.09, now + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.11);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            // ২. ট্রানজিশন সুইপ / হুশ (সিন পরিবর্তনের সময় সূক্ষ্ম ফিল্টার্ড নয়েজ)
+            playTransitionWhoosh() {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const duration = 0.42;
+                const sampleCount = Math.floor(this.ctx.sampleRate * duration);
+                const buffer = this.ctx.createBuffer(1, sampleCount, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+
+                for (let i = 0; i < sampleCount; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.Q.setValueAtTime(1.8, now);
+                filter.frequency.setValueAtTime(240, now);
+                filter.frequency.exponentialRampToValueAtTime(1150, now + duration * 0.55);
+                filter.frequency.exponentialRampToValueAtTime(320, now + duration);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.0008, now);
+                gain.gain.linearRampToValueAtTime(0.075, now + duration * 0.35);
+                gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                noise.start(now);
+                noise.stop(now + duration);
+            }
+
+            // ৩. কাউন্টার / প্রোগ্রেস টিক (প্রোগ্রেস বার এগোনোর সাথে সামঞ্জস্যপূর্ণ হালকা টিক/রাইজ)
+            playProgressTick(stepIndex = 0) {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                const freq = 620 + stepIndex * 65;
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.18, now + 0.045);
+
+                gain.gain.setValueAtTime(0.0008, now);
+                gain.gain.linearRampToValueAtTime(0.055, now + 0.007);
+                gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.055);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.06);
+            }
+
+            // ৪. সাকসেস / চেকমার্ক চিম (চক্র বা কমপ্লিশন সম্পন্ন হলে পজিটিভ কম্বিনেশন টোন)
+            playSuccessChime() {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 পজিটিভ মেজর চিম
+
+                notes.forEach((freq, idx) => {
+                    const startAt = now + idx * 0.085;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, startAt);
+
+                    gain.gain.setValueAtTime(0.0008, startAt);
+                    gain.gain.linearRampToValueAtTime(0.095, startAt + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.0008, startAt + 0.32);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(startAt);
+                    osc.stop(startAt + 0.34);
+                });
+            }
+        }
+
+        const soundEngine = new StageSoundEngine();
+
+        /* =====================================================================
+           ৩. সিন ডেটা (৪টি কার্ড/বক্স, ১ ব্যাজ, ১ হেডিং, ১ সাব-টেক্সট ও কারাওকে ক্যাপশন)
+           ===================================================================== */
         const scenes = [
             {
                 badge: "SCENE 01 • OVERVIEW",
@@ -521,12 +688,17 @@
         const karaokeCaption = document.getElementById('karaokeCaption');
         const statusText = document.getElementById('statusText');
         const touchFeedback = document.getElementById('touchFeedback');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundLabel = document.getElementById('soundLabel');
 
         let currentSceneIndex = 0;
         let activeLayerEl = null;
         let isPlaying = true;
         let elapsedInScene = 0;
         let lastTimestamp = null;
+        let lastTickMilestone = 0;
+        let popTimers = [];
         let feedbackTimeout = null;
 
         scenes.forEach(() => {
@@ -538,6 +710,11 @@
             progressBarsEl.appendChild(track);
         });
         const progressFills = document.querySelectorAll('.progress-fill');
+
+        function clearPopTimers() {
+            popTimers.forEach((t) => clearTimeout(t));
+            popTimers = [];
+        }
 
         function createSceneLayer(scene) {
             const layer = document.createElement('div');
@@ -565,9 +742,14 @@
         function loadScene(index) {
             currentSceneIndex = index;
             elapsedInScene = 0;
+            lastTickMilestone = 0;
+            clearPopTimers();
+
             const scene = scenes[index];
 
-            // আগের সিন থাকলে সেটিকে ক্রসফেড/ডিজলভ + ফোকাস আউট + স্কেল জুম করে বিদায় দেওয়া
+            // ট্রানজিশন সুইপ / হুশ সাউন্ড
+            soundEngine.playTransitionWhoosh();
+
             if (activeLayerEl) {
                 const oldLayer = activeLayerEl;
                 oldLayer.classList.remove('active');
@@ -577,12 +759,10 @@
                 }, 700);
             }
 
-            // নতুন সিন লেয়ার তৈরি ও যোগ করা
             const newLayer = createSceneLayer(scene);
             visualViewport.appendChild(newLayer);
             activeLayerEl = newLayer;
 
-            // কারাওকে ক্যাপশন আপডেট
             stage169.classList.remove('ready');
             karaokeCaption.innerHTML = '';
             scene.words.forEach((w) => {
@@ -597,6 +777,15 @@
             requestAnimationFrame(() => {
                 newLayer.classList.add('active');
                 stage169.classList.add('ready');
+
+                // স্ট্যাগার ডিলে অনুযায়ী সফট পপ / কার্ড এন্ট্রি সাউন্ড
+                const popDelays = [80, 140, 200, 240, 280, 320];
+                popDelays.forEach((delayMs, idx) => {
+                    const timer = setTimeout(() => {
+                        if (isPlaying) soundEngine.playSoftPop(idx);
+                    }, delayMs);
+                    popTimers.push(timer);
+                });
             });
 
             progressFills.forEach((fill, i) => {
@@ -616,6 +805,13 @@
 
                 progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
 
+                // প্রোগ্রেস বার এগোনোর সাথে কাউন্টার / প্রোগ্রেস টিক (প্রতি 25% ধাপে)
+                const milestone = Math.floor(progress * 4);
+                if (milestone > lastTickMilestone && milestone <= 4) {
+                    lastTickMilestone = milestone;
+                    soundEngine.playProgressTick(milestone);
+                }
+
                 const wordEls = karaokeCaption.querySelectorAll('.k-word');
                 scene.words.forEach((w, idx) => {
                     if (progress >= w.start && progress <= w.end) {
@@ -630,7 +826,12 @@
                 });
 
                 if (progress >= 1) {
-                    const nextIndex = (currentSceneIndex + 1) % scenes.length;
+                    const isCycleCompleted = currentSceneIndex === scenes.length - 1;
+                    if (isCycleCompleted) {
+                        // সব সিন সম্পন্ন হলে সাকসেস / চেকমার্ক চিম
+                        soundEngine.playSuccessChime();
+                    }
+                    const nextIndex = (currentSlideOrSceneNext(currentSceneIndex, scenes.length));
                     loadScene(nextIndex);
                 }
             }
@@ -638,7 +839,12 @@
             requestAnimationFrame(tick);
         }
 
+        function currentSlideOrSceneNext(curr, total) {
+            return (curr + 1) % total;
+        }
+
         stage169.addEventListener('click', () => {
+            soundEngine.unlock();
             isPlaying = !isPlaying;
             stage169.classList.toggle('paused', !isPlaying);
             statusText.textContent = isPlaying ? 'PLAYING' : 'PAUSED';
@@ -649,6 +855,15 @@
             feedbackTimeout = setTimeout(() => {
                 touchFeedback.classList.remove('show');
             }, 500);
+        });
+
+        soundToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isSoundOn = soundEngine.toggle();
+            soundToggleBtn.classList.toggle('muted', !isSoundOn);
+            soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
+            soundLabel.textContent = isSoundOn ? 'Sound ON' : 'Sound OFF';
+            if (isSoundOn) soundEngine.playSoftPop(2);
         });
 
         loadScene(0);
