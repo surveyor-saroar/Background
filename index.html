@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - Dual Click & Background Music Stage</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - 10% BG Music & Live Google Drive Logo</title>
     <style>
         * {
             margin: 0;
@@ -617,11 +617,21 @@
             position: relative;
         }
 
+        .live-icon-wrap.drive-logo-wrap {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(251, 188, 4, 0.35);
+        }
+
         .info-card.size-lg .live-icon-wrap {
             width: 92px;
             height: 92px;
             border-radius: 22px;
             background: rgba(250, 204, 21, 0.2);
+        }
+
+        .info-card.size-lg .live-icon-wrap.drive-logo-wrap {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(66, 133, 244, 0.45);
         }
 
         .info-card.size-sm .live-icon-wrap {
@@ -681,6 +691,33 @@
             50%, 100% { stroke-dashoffset: 0; }
         }
 
+        /* Google Drive লাইভ লোগো অ্যানিমেশন */
+        @keyframes driveLivePulse {
+            0%, 100% {
+                transform: scale(1) translateY(0px);
+                filter: drop-shadow(0 0 6px rgba(66, 133, 244, 0.4));
+            }
+            50% {
+                transform: scale(1.1) translateY(-2px);
+                filter: drop-shadow(0 0 14px rgba(52, 168, 83, 0.55));
+            }
+        }
+
+        @keyframes driveLegYellow {
+            0%, 100% { transform: translate(0, 0); opacity: 1; }
+            50% { transform: translate(1.8px, -1.5px); opacity: 0.92; }
+        }
+
+        @keyframes driveLegGreen {
+            0%, 100% { transform: translate(0, 0); opacity: 1; }
+            50% { transform: translate(-1.8px, 1.2px); opacity: 0.92; }
+        }
+
+        @keyframes driveLegBlue {
+            0%, 100% { transform: translate(0, 0); opacity: 1; }
+            50% { transform: translate(0, 1.8px); opacity: 0.92; }
+        }
+
         .anim-float { animation: iconFloat 2.1s ease-in-out infinite; }
         .anim-spin { transform-origin: center; animation: iconSpinSlow 6s linear infinite; }
         .anim-pulse { transform-origin: center; animation: iconPulseScale 1.8s ease-in-out infinite; }
@@ -688,6 +725,10 @@
         .anim-plus { transform-origin: center; animation: plusPulse 2.2s ease-in-out infinite; }
         .anim-crop { transform-origin: center; animation: cropExpand 2s ease-in-out infinite; }
         .anim-check { stroke-dasharray: 36; stroke-dashoffset: 0; animation: checkDraw 2.2s ease-in-out infinite; }
+        .anim-drive-live { transform-origin: center; animation: driveLivePulse 2s ease-in-out infinite; }
+        .anim-drive-yellow { animation: driveLegYellow 2s ease-in-out infinite; }
+        .anim-drive-green { animation: driveLegGreen 2s ease-in-out infinite; }
+        .anim-drive-blue { animation: driveLegBlue 2s ease-in-out infinite; }
 
         .stage-16-9.paused .anim-float,
         .stage-16-9.paused .anim-spin,
@@ -695,7 +736,11 @@
         .stage-16-9.paused .anim-scan-beam,
         .stage-16-9.paused .anim-plus,
         .stage-16-9.paused .anim-crop,
-        .stage-16-9.paused .anim-check {
+        .stage-16-9.paused .anim-check,
+        .stage-16-9.paused .anim-drive-live,
+        .stage-16-9.paused .anim-drive-yellow,
+        .stage-16-9.paused .anim-drive-green,
+        .stage-16-9.paused .anim-drive-blue {
             animation-play-state: paused;
         }
 
@@ -868,6 +913,7 @@
     <script>
         const USER_PHOTO_URL = "saroar01.png";
         const BG_MUSIC_CANDIDATES = ["music1", "music1.mp3", "music1.wav", "music1.ogg", "music1.m4a"];
+        const BG_MUSIC_VOLUME = 0.10; // ব্যাকগ্রাউন্ড সাউন্ড 10%
         const EXTRA_HOLD_MS = 5000;
 
         /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
@@ -936,14 +982,15 @@
         initNetwork();
         animateNetwork();
 
-        /* ২. Web Audio API সাউন্ড ইঞ্জিন + 5% ব্যাকগ্রাউন্ড মিউজিক */
+        /* ২. Web Audio API সাউন্ড ইঞ্জিন + 10% ব্যাকগ্রাউন্ড মিউজিক */
         class StageSoundEngine {
-            constructor(candidates) {
+            constructor(candidates, bgVolume) {
                 this.ctx = null;
                 this.candidates = candidates;
                 this.candidateIdx = 0;
+                this.bgVolume = bgVolume;
                 this.bgAudio = new Audio(this.candidates[0]);
-                this.bgAudio.volume = 0.05; // 5% ভলিউম
+                this.bgAudio.volume = this.bgVolume; // 10% ভলিউম
                 this.bgAudio.loop = true;
                 this.bgAudio.preload = "auto";
                 this.sequenceFinished = false;
@@ -975,7 +1022,7 @@
 
             startBackgroundMusic() {
                 if (this.sequenceFinished) return;
-                this.bgAudio.volume = 0.05;
+                this.bgAudio.volume = this.bgVolume;
                 if (this.bgAudio.paused) {
                     const p = this.bgAudio.play();
                     if (p && typeof p.catch === 'function') {
@@ -1099,16 +1146,15 @@
             }
         }
 
-        const soundEngine = new StageSoundEngine(BG_MUSIC_CANDIDATES);
+        const soundEngine = new StageSoundEngine(BG_MUSIC_CANDIDATES, BG_MUSIC_VOLUME);
 
-        // ব্রাউজার অটোপ্লে পলিসি এড়াতে প্রথম যেকোনো ইন্টারঅ্যাকশনে মিউজিক শুরু করার লিসেনার
         ['pointerdown', 'keydown', 'click'].forEach((evName) => {
             window.addEventListener(evName, () => {
                 soundEngine.startBackgroundMusic();
             }, { once: true, passive: true });
         });
 
-        /* ৩. লাইভ অ্যানিমেটেড SVG আইকন লাইব্রেরি */
+        /* ৩. লাইভ অ্যানিমেটেড SVG আইকন ও Google Drive লাইভ লোগো আইকন লাইব্রেরি */
         const LIVE_ICONS = {
             ai: `
                 <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
@@ -1137,11 +1183,11 @@
                     <rect x="24" y="16" width="16" height="20" rx="2" stroke-dasharray="4 3"/>
                 </svg>
             `,
-            drive: `
-                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="32,10 52,44 38,44 18,10" fill="rgba(250,204,21,0.2)"/>
-                    <polygon points="18,10 8,28 18,46 28,28" fill="rgba(250,204,21,0.12)"/>
-                    <line x1="18" y1="46" x2="52" y2="46"/>
+            driveLiveLogo: `
+                <svg class="live-svg anim-drive-live" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <polygon class="anim-drive-yellow" points="22,12 42,12 56,36 36,36" fill="#FBBC04"/>
+                    <polygon class="anim-drive-green" points="8,36 22,12 32,29 18,53" fill="#34A853"/>
+                    <polygon class="anim-drive-blue" points="18,53 25,41 56,41 49,53" fill="#4285F4"/>
                 </svg>
             `,
             plus: `
@@ -1261,7 +1307,7 @@
                 subtext: "আপনার ফোনে থাকা Google Drive অ্যাপটি ওপেন করুন",
                 duration: 5000,
                 cards: [
-                    { iconKey: "drive", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
+                    { iconKey: "driveLiveLogo", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
                     { iconKey: "ai", title: "ক্লাউড সিঙ্ক", desc: "ফাইল নিরাপদ", span: 4, size: "sm" }
                 ],
                 caption: "প্রথমে আপনার ফোনে Google Drive অ্যাপটি ওপেন করুন।"
@@ -1449,9 +1495,11 @@
                     `;
                 }
 
+                const extraWrapClass = c.iconKey === 'driveLiveLogo' ? ' drive-logo-wrap' : '';
+
                 return `
                     <div class="info-card size-${c.size || 'md'}" style="--span: ${c.span || 4};">
-                        <div class="live-icon-wrap">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.ai}</div>
+                        <div class="live-icon-wrap${extraWrapClass}">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.ai}</div>
                         <div class="card-title">${c.title}</div>
                         <div class="card-desc">${c.desc}</div>
                     </div>
@@ -1699,4 +1747,4 @@
         requestAnimationFrame(tick);
     </script>
 </body>
-</html
+</html>
