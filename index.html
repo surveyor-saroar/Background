@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - Asymmetric Cards & Shrink-Slide Stage</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - Live Animated SVG Icons Stage</title>
     <style>
         * {
             margin: 0;
@@ -102,7 +102,7 @@
             height: 8px;
             border-radius: 50%;
             background: #facc15;
-            animation: pulse 1.4s infinite;
+            animation: pulseDot 1.4s infinite;
         }
 
         .stage-16-9.paused .pulse-dot {
@@ -110,7 +110,7 @@
             animation: none;
         }
 
-        @keyframes pulse {
+        @keyframes pulseDot {
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.35); opacity: 0.55; }
         }
@@ -195,7 +195,6 @@
             pointer-events: auto;
         }
 
-        /* কার্ড ও লেখা ছোট হয়ে সাইডে সরে যাওয়ার বিদায়ী অবস্থা */
         .scene-layer.exiting {
             opacity: 0;
             filter: blur(8px);
@@ -239,7 +238,6 @@
             transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        /* টাইটেল ও Highlight Accent */
         .scene-heading {
             font-size: clamp(1.25rem, 2.3vw, 1.9rem);
             font-weight: 700;
@@ -317,7 +315,7 @@
             transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        /* ভিন্ন সাইজের কার্ড গ্রিড (Asymmetric / Varied Sizing) */
+        /* ভিন্ন সাইজের কার্ড গ্রিড */
         .cards-grid {
             width: 100%;
             display: grid;
@@ -329,14 +327,14 @@
 
         .info-card {
             background: rgba(6, 36, 48, 0.44);
-            border: 1px solid rgba(250, 204, 21, 0.28);
-            border-radius: 14px;
-            padding: 12px 12px;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: 16px;
+            padding: 14px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 6px;
             grid-column: span var(--span, 4);
             opacity: 0;
             filter: blur(8px);
@@ -347,46 +345,14 @@
                 transform 0.54s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        /* বড় ফিচার কার্ডের স্টাইল */
         .info-card.size-lg {
-            background: rgba(10, 54, 72, 0.52);
-            border-color: rgba(250, 204, 21, 0.52);
-            padding: 16px 16px;
+            background: rgba(10, 54, 72, 0.54);
+            border-color: rgba(250, 204, 21, 0.55);
+            padding: 18px 16px;
         }
 
-        .info-card.size-lg .card-visual {
-            width: 54px;
-            height: 54px;
-            font-size: 1.8rem;
-            background: rgba(250, 204, 21, 0.2);
-        }
-
-        .info-card.size-lg .card-title {
-            font-size: 1.05rem;
-        }
-
-        .info-card.size-lg .card-desc {
-            font-size: 0.84rem;
-        }
-
-        /* ছোট কার্ডের স্টাইল */
         .info-card.size-sm {
-            padding: 10px 8px;
-            opacity: 0.94;
-        }
-
-        .info-card.size-sm .card-visual {
-            width: 36px;
-            height: 36px;
-            font-size: 1.15rem;
-        }
-
-        .info-card.size-sm .card-title {
-            font-size: 0.82rem;
-        }
-
-        .info-card.size-sm .card-desc {
-            font-size: 0.7rem;
+            padding: 11px 8px;
         }
 
         .info-card:nth-child(1) { transition-delay: 0.16s; }
@@ -401,11 +367,10 @@
         }
 
         .scene-layer.active .info-card.size-sm {
-            opacity: 0.92;
-            transform: translate3d(0, 0, 0) scale(0.95);
+            opacity: 0.94;
+            transform: translate3d(0, 0, 0) scale(0.96);
         }
 
-        /* বিদায়ী অবস্থায় কার্ডগুলো ছোট হয়ে পাশে সরে যাওয়া */
         .scene-layer.exiting .info-card {
             opacity: 0;
             filter: blur(8px);
@@ -416,27 +381,154 @@
                 transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .card-visual {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+        /* বড় লাইভ অ্যানিমেটেড আইকন কন্টেইনার */
+        .live-icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
             background: rgba(250, 204, 21, 0.14);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.45rem;
+            color: #facc15;
+            position: relative;
+        }
+
+        .info-card.size-lg .live-icon-wrap {
+            width: 92px;
+            height: 92px;
+            border-radius: 22px;
+            background: rgba(250, 204, 21, 0.2);
+        }
+
+        .info-card.size-sm .live-icon-wrap {
+            width: 58px;
+            height: 58px;
+            border-radius: 15px;
+        }
+
+        .live-svg {
+            width: 46px;
+            height: 46px;
+            overflow: visible;
+        }
+
+        .info-card.size-lg .live-svg {
+            width: 60px;
+            height: 60px;
+        }
+
+        .info-card.size-sm .live-svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        /* লাইভ অ্যানিমেশন কিফ্রেমগুলো */
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @keyframes iconSpinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes iconPulseScale {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.13); }
+        }
+
+        @keyframes scanBeamMove {
+            0%, 100% { transform: translateY(-9px); opacity: 0.95; }
+            50% { transform: translateY(10px); opacity: 0.45; }
+        }
+
+        @keyframes plusPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.16) rotate(90deg); }
+        }
+
+        @keyframes cropExpand {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.09); }
+        }
+
+        @keyframes checkDraw {
+            0% { stroke-dashoffset: 36; }
+            50%, 100% { stroke-dashoffset: 0; }
+        }
+
+        .anim-float {
+            animation: iconFloat 2.1s ease-in-out infinite;
+        }
+
+        .anim-spin {
+            transform-origin: center;
+            animation: iconSpinSlow 6s linear infinite;
+        }
+
+        .anim-pulse {
+            transform-origin: center;
+            animation: iconPulseScale 1.8s ease-in-out infinite;
+        }
+
+        .anim-scan-beam {
+            animation: scanBeamMove 1.6s ease-in-out infinite;
+        }
+
+        .anim-plus {
+            transform-origin: center;
+            animation: plusPulse 2.2s ease-in-out infinite;
+        }
+
+        .anim-crop {
+            transform-origin: center;
+            animation: cropExpand 2s ease-in-out infinite;
+        }
+
+        .anim-check {
+            stroke-dasharray: 36;
+            stroke-dashoffset: 0;
+            animation: checkDraw 2.2s ease-in-out infinite;
+        }
+
+        .stage-16-9.paused .anim-float,
+        .stage-16-9.paused .anim-spin,
+        .stage-16-9.paused .anim-pulse,
+        .stage-16-9.paused .anim-scan-beam,
+        .stage-16-9.paused .anim-plus,
+        .stage-16-9.paused .anim-crop,
+        .stage-16-9.paused .anim-check {
+            animation-play-state: paused;
         }
 
         .card-title {
-            font-size: 0.92rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: #fef08a;
         }
 
+        .info-card.size-lg .card-title {
+            font-size: 1.08rem;
+        }
+
+        .info-card.size-sm .card-title {
+            font-size: 0.84rem;
+        }
+
         .card-desc {
-            font-size: 0.76rem;
-            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.86);
             line-height: 1.35;
+        }
+
+        .info-card.size-lg .card-desc {
+            font-size: 0.86rem;
+        }
+
+        .info-card.size-sm .card-desc {
+            font-size: 0.72rem;
         }
 
         /* ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স */
@@ -782,6 +874,102 @@
 
         const soundEngine = new StageSoundEngine();
 
+        /* ৩. লাইভ অ্যানিমেটেড SVG আইকন লাইব্রেরি */
+        const LIVE_ICONS = {
+            ai: `
+                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="32" cy="32" r="11" fill="rgba(250,204,21,0.18)"/>
+                    <path d="M32 6v10M32 48v10M6 32h10M48 32h10"/>
+                    <path d="M13.6 13.6l7.1 7.1M43.3 43.3l7.1 7.1M50.4 13.6l-7.1 7.1M20.7 43.3l-7.1 7.1"/>
+                    <circle cx="32" cy="32" r="4" fill="#facc15"/>
+                </svg>
+            `,
+            bolt: `
+                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="36,8 14,36 30,36 28,56 50,28 34,28" fill="rgba(250,204,21,0.22)"/>
+                </svg>
+            `,
+            docScan: `
+                <svg class="live-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 10h20l12 12v32a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.12)"/>
+                    <polyline points="36,10 36,22 48,22"/>
+                    <line class="anim-scan-beam" x1="10" y1="32" x2="54" y2="32" stroke="#fef08a" stroke-width="3.2"/>
+                </svg>
+            `,
+            phone: `
+                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="18" y="8" width="28" height="48" rx="6" fill="rgba(250,204,21,0.14)"/>
+                    <line x1="27" y1="49" x2="37" y2="49" stroke-width="3"/>
+                    <rect x="24" y="16" width="16" height="20" rx="2" stroke-dasharray="4 3"/>
+                </svg>
+            `,
+            drive: `
+                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="32,10 52,44 38,44 18,10" fill="rgba(250,204,21,0.2)"/>
+                    <polygon points="18,10 8,28 18,46 28,28" fill="rgba(250,204,21,0.12)"/>
+                    <line x1="18" y1="46" x2="52" y2="46"/>
+                </svg>
+            `,
+            plus: `
+                <svg class="live-svg anim-plus" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+                    <circle cx="32" cy="32" r="22" stroke-opacity="0.35" stroke-width="2"/>
+                    <line x1="32" y1="18" x2="32" y2="46"/>
+                    <line x1="18" y1="32" x2="46" y2="32"/>
+                </svg>
+            `,
+            camera: `
+                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 22h10l4-6h16l4 6h10a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V26a4 4 0 0 1 4-4z" fill="rgba(250,204,21,0.14)"/>
+                    <circle cx="32" cy="36" r="9"/>
+                    <circle cx="32" cy="36" r="3.5" fill="#facc15"/>
+                </svg>
+            `,
+            crop: `
+                <svg class="live-svg anim-crop" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8v38h38"/>
+                    <path d="M8 18h38v38" stroke-opacity="0.45" stroke-dasharray="4 4"/>
+                    <rect x="18" y="18" width="28" height="28" fill="rgba(250,204,21,0.14)" stroke="none"/>
+                </svg>
+            `,
+            filter: `
+                <svg class="live-svg anim-spin" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6">
+                    <circle cx="32" cy="32" r="20" fill="rgba(250,204,21,0.12)"/>
+                    <path d="M32 12a20 20 0 0 1 0 40z" fill="rgba(250,204,21,0.35)"/>
+                    <circle cx="32" cy="32" r="6"/>
+                </svg>
+            `,
+            save: `
+                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 10h30l10 10v34a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.15)"/>
+                    <rect x="20" y="10" width="18" height="12"/>
+                    <rect x="18" y="32" width="28" height="18" rx="2"/>
+                </svg>
+            `,
+            pdf: `
+                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 10h20l12 12v32a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.16)"/>
+                    <polyline points="36,10 36,22 48,22"/>
+                    <path class="anim-check" d="M22 36l6 6 14-14" stroke="#fef08a" stroke-width="3.2"/>
+                </svg>
+            `,
+            share: `
+                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="46" cy="16" r="6" fill="rgba(250,204,21,0.25)"/>
+                    <circle cx="18" cy="32" r="6" fill="rgba(250,204,21,0.25)"/>
+                    <circle cx="46" cy="48" r="6" fill="rgba(250,204,21,0.25)"/>
+                    <line x1="23.5" y1="29" x2="40.5" y2="19"/>
+                    <line x1="23.5" y1="35" x2="40.5" y2="45"/>
+                </svg>
+            `,
+            bell: `
+                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M46 26a14 14 0 0 0-28 0c0 14-6 18-6 18h40s-6-4-6-18z" fill="rgba(250,204,21,0.2)"/>
+                    <path d="M27.5 50a5 5 0 0 0 9 0"/>
+                    <circle cx="48" cy="14" r="5" fill="#facc15"/>
+                </svg>
+            `
+        };
+
         function buildTimedWords(sentence) {
             const rawWords = sentence.trim().split(/\s+/);
             const startMargin = 0.05;
@@ -795,11 +983,7 @@
             }));
         }
 
-        /* =====================================================================
-           ৩. ১০টি সিন (ভিন্ন সাইজের কার্ড ও ভিজ্যুয়াল; ক্যাপশন ও ৫s সময় অপরিবর্তিত)
-           span: 12-column grid অনুযায়ী (যেমন 6 = অর্ধেক, 4 = এক-তৃতীয়াংশ, 3 = এক-চতুর্থাংশ)
-           size: 'lg' (বড়), 'md' (মাঝারি), 'sm' (ছোট)
-           ===================================================================== */
+        /* ৪. ১০টি সিন (ভিন্ন সাইজের কার্ড + বড় লাইভ অ্যানিমেটেড আইকন) */
         const scenes = [
             {
                 badge: "SCENE 01 • AI HOOK",
@@ -809,9 +993,9 @@
                 subtext: "সময় বাঁচিয়ে মাত্র কয়েক সেকেন্ডেই যেকোনো কাগজপত্র ডিজিটাল করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "🤖", title: "AI স্মার্ট স্ক্যান", desc: "দ্রুত ও নির্ভুল ডকুমেন্ট ক্যাপচার", span: 5, size: "lg" },
-                    { visual: "⚡", title: "সময় সাশ্রয়", desc: "সেকেন্ডেই কাজ শেষ", span: 3, size: "sm" },
-                    { visual: "📄", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ফাইল", span: 4, size: "md" }
+                    { iconKey: "ai", title: "AI স্মার্ট স্ক্যান", desc: "দ্রুত ও নির্ভুল ডকুমেন্ট ক্যাপচার", span: 5, size: "lg" },
+                    { iconKey: "bolt", title: "সময় সাশ্রয়", desc: "সেকেন্ডেই কাজ শেষ", span: 3, size: "sm" },
+                    { iconKey: "docScan", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ফাইল", span: 4, size: "md" }
                 ],
                 caption: "এখন AI-এর যুগ! একটি ডকুমেন্ট স্ক্যান করতে আর সময় নষ্ট করার প্রয়োজন নেই।"
             },
@@ -823,9 +1007,9 @@
                 subtext: "দোকানে বা স্ক্যানারের কাছে যাওয়ার কোনো প্রয়োজন নেই",
                 duration: 5000,
                 cards: [
-                    { visual: "📱", title: "পকেট স্ক্যানার", desc: "যেকোনো স্মার্টফোনেই সহজ ও দ্রুত সমাধান", span: 6, size: "lg" },
-                    { visual: "🪪", title: "আইডি কার্ড", desc: "সহজ স্ক্যান", span: 3, size: "sm" },
-                    { visual: "🧾", title: "বিল ও রসিদ", desc: "দ্রুত সংরক্ষণ", span: 3, size: "sm" }
+                    { iconKey: "phone", title: "পকেট স্ক্যানার", desc: "যেকোনো স্মার্টফোনেই সহজ ও দ্রুত সমাধান", span: 6, size: "lg" },
+                    { iconKey: "docScan", title: "আইডি ও ফর্ম", desc: "সহজ স্ক্যান", span: 3, size: "sm" },
+                    { iconKey: "ai", title: "স্মার্ট ফ্রেম", desc: "দ্রুত সংরক্ষণ", span: 3, size: "sm" }
                 ],
                 caption: "আপনার হাতে থাকা স্মার্টফোন দিয়েই খুব সহজে স্ক্যান করতে পারবেন যেকোনো কাগজপত্র।"
             },
@@ -837,8 +1021,8 @@
                 subtext: "আপনার ফোনে থাকা Google Drive অ্যাপটি ওপেন করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "🔺", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
-                    { visual: "☁️", title: "ক্লাউড সিঙ্ক", desc: "ফাইল নিরাপদ", span: 4, size: "sm" }
+                    { iconKey: "drive", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
+                    { iconKey: "ai", title: "ক্লাউড সিঙ্ক", desc: "ফাইল নিরাপদ", span: 4, size: "sm" }
                 ],
                 caption: "প্রথমে আপনার ফোনে Google Drive অ্যাপটি ওপেন করুন।"
             },
@@ -850,8 +1034,8 @@
                 subtext: "নিচের প্লাস (+) আইকনে ট্যাপ করে Scan অপশনে ক্লিক করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "➕", title: "প্লাস (+) আইকন", desc: "নিচের কোণায় ট্যাপ", span: 4, size: "sm" },
-                    { visual: "📷", title: "Scan অপশন বেছে নিন", desc: "সরাসরি ক্যামেরা স্ক্যান মোড চালু হবে", span: 8, size: "lg" }
+                    { iconKey: "plus", title: "প্লাস (+) আইকন", desc: "নিচের কোণায় ট্যাপ", span: 4, size: "sm" },
+                    { iconKey: "docScan", title: "Scan অপশন বেছে নিন", desc: "সরাসরি ক্যামেরা স্ক্যান মোড চালু হবে", span: 8, size: "lg" }
                 ],
                 caption: "এরপর নিচের প্লাস (+) আইকনে ক্লিক করুন এবং Scan অপশনটি বেছে নিন।"
             },
@@ -863,8 +1047,8 @@
                 subtext: "ভালো আলো ও পরিষ্কার ফ্রেমে কাগজটি স্থির রাখুন",
                 duration: 5000,
                 cards: [
-                    { visual: "📄", title: "ক্যামেরার সামনে ডকুমেন্ট", desc: "কাগজটি সমতল রেখে সোজা ফ্রেমে ধরুন", span: 7, size: "lg" },
-                    { visual: "💡", title: "ভালো আলো", desc: "স্পষ্ট লেখা", span: 5, size: "sm" }
+                    { iconKey: "docScan", title: "ক্যামেরার সামনে ডকুমেন্ট", desc: "কাগজটি সমতল রেখে সোজা ফ্রেমে ধরুন", span: 7, size: "lg" },
+                    { iconKey: "camera", title: "সঠিক ফ্রেমিং", desc: "স্পষ্ট লেখা", span: 5, size: "sm" }
                 ],
                 caption: "এবার যে ডকুমেন্টটি স্ক্যান করবেন, সেটি ক্যামেরার সামনে ধরুন।"
             },
@@ -876,8 +1060,8 @@
                 subtext: "অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে",
                 duration: 5000,
                 cards: [
-                    { visual: "📸", title: "ছবি তুলুন", desc: "শাটার চাপুন", span: 4, size: "sm" },
-                    { visual: "🎯", title: "স্বয়ংক্রিয় চারপাশ শনাক্তকরণ", desc: "AI নিজে থেকেই ডকুমেন্টের বর্ডার ধরে নেবে", span: 8, size: "lg" }
+                    { iconKey: "camera", title: "ছবি তুলুন", desc: "শাটার চাপুন", span: 4, size: "sm" },
+                    { iconKey: "crop", title: "স্বয়ংক্রিয় চারপাশ শনাক্তকরণ", desc: "AI নিজে থেকেই ডকুমেন্টের বর্ডার ধরে নেবে", span: 8, size: "lg" }
                 ],
                 caption: "ক্যামেরা দিয়ে ছবি তুলুন। অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে।"
             },
@@ -889,9 +1073,9 @@
                 subtext: "চারপাশ কেটে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার দিন",
                 duration: 5000,
                 cards: [
-                    { visual: "✂️", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন", span: 4, size: "md" },
-                    { visual: "🎨", title: "কালার ও B&W ফিল্টার", desc: "প্রয়োজন অনুযায়ী সেরা লুক দিন", span: 5, size: "lg" },
-                    { visual: "✨", title: "ক্লিয়ার ভিউ", desc: "সহজে পঠনযোগ্য", span: 3, size: "sm" }
+                    { iconKey: "crop", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন", span: 4, size: "md" },
+                    { iconKey: "filter", title: "কালার ও B&W ফিল্টার", desc: "প্রয়োজন অনুযায়ী সেরা লুক দিন", span: 5, size: "lg" },
+                    { iconKey: "bolt", title: "ক্লিয়ার ভিউ", desc: "সহজে পঠনযোগ্য", span: 3, size: "sm" }
                 ],
                 caption: "প্রয়োজনে ছবির চারপাশ Crop করে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার ব্যবহার করুন।"
             },
@@ -903,8 +1087,8 @@
                 subtext: "এক ক্লিকেই আপনার ডকুমেন্টটি সংরক্ষিত হয়ে যাবে",
                 duration: 5000,
                 cards: [
-                    { visual: "🔎", title: "প্রিভিউ চেক", desc: "লেখাগুলো ঠিক আছে কি না দেখুন", span: 4, size: "sm" },
-                    { visual: "💾", title: "Save বাটনে ক্লিক", desc: "ডকুমেন্ট সাথে সাথে সেভ হয়ে যাবে", span: 8, size: "lg" }
+                    { iconKey: "docScan", title: "প্রিভিউ চেক", desc: "লেখাগুলো ঠিক আছে কি না দেখুন", span: 4, size: "sm" },
+                    { iconKey: "save", title: "Save বাটনে ক্লিক", desc: "ডকুমেন্ট সাথে সাথে সেভ হয়ে যাবে", span: 8, size: "lg" }
                 ],
                 caption: "সবকিছু ঠিক থাকলে Save বাটনে ক্লিক করুন।"
             },
@@ -916,9 +1100,9 @@
                 subtext: "WhatsApp, Messenger কিংবা ইমেইলে মুহূর্তেই পাঠাতে পারবেন",
                 duration: 5000,
                 cards: [
-                    { visual: "📑", title: "রেডি PDF ফাইল", desc: "ডকুমেন্ট স্বয়ংক্রিয়ভাবে PDF-এ রূপান্তর হবে", span: 6, size: "lg" },
-                    { visual: "💬", title: "WhatsApp / Messenger", desc: "দ্রুত শেয়ার", span: 3, size: "sm" },
-                    { visual: "📧", title: "ইমেইল", desc: "সহজে পাঠান", span: 3, size: "sm" }
+                    { iconKey: "pdf", title: "রেডি PDF ফাইল", desc: "ডকুমেন্ট স্বয়ংক্রিয়ভাবে PDF-এ রূপান্তর হবে", span: 6, size: "lg" },
+                    { iconKey: "share", title: "মেসেজ ও চ্যাট", desc: "দ্রুত শেয়ার", span: 3, size: "sm" },
+                    { iconKey: "bolt", title: "ইমেইল সেন্ড", desc: "সহজে পাঠান", span: 3, size: "sm" }
                 ],
                 caption: "ব্যস! আপনার ডকুমেন্টটি PDF ফাইলে তৈরি হয়ে যাবে। এখন চাইলে WhatsApp, Messenger কিংবা ইমেইলে পাঠাতে পারবেন।"
             },
@@ -931,9 +1115,9 @@
                 duration: 5000,
                 isEnding: true,
                 cards: [
-                    { visual: "⏱️", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত স্ক্যান", span: 3, size: "sm" },
-                    { visual: "🔔", title: "পেজ ফলো করে সঙ্গে থাকুন", desc: "নতুন AI ও টেক টিপস সবার আগে পেতে যুক্ত থাকুন", span: 6, size: "lg" },
-                    { visual: "👍", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm" }
+                    { iconKey: "bolt", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত স্ক্যান", span: 3, size: "sm" },
+                    { iconKey: "bell", title: "পেজ ফলো করে সঙ্গে থাকুন", desc: "নতুন AI ও টেক টিপস সবার আগে পেতে যুক্ত থাকুন", span: 6, size: "lg" },
+                    { iconKey: "share", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm" }
                 ],
                 caption: "মাত্র কয়েক সেকেন্ডেই ডকুমেন্ট স্ক্যান করার এই সহজ ট্রিকটি কাজে লাগান। এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন"
             }
@@ -982,7 +1166,7 @@
 
             const cardsHTML = scene.cards.map(c => `
                 <div class="info-card size-${c.size || 'md'}" style="--span: ${c.span || 4};">
-                    <div class="card-visual">${c.visual}</div>
+                    <div class="live-icon-wrap">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.ai}</div>
                     <div class="card-title">${c.title}</div>
                     <div class="card-desc">${c.desc}</div>
                 </div>
@@ -1013,7 +1197,6 @@
             statusText.textContent = `SCENE ${index + 1} / ${scenes.length}`;
             soundEngine.playTransitionWhoosh();
 
-            // পুরোনো সিনের কার্ড ও লেখা ছোট হয়ে পাশে সরে যাবে, সাথে সাথেই নতুন সিন ঢুকবে
             if (activeLayerEl) {
                 const oldLayer = activeLayerEl;
                 oldLayer.classList.remove('active');
