@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - Highlight & Typing Accent Stage</title>
+    <title>AI ডকুমেন্ট স্ক্যানিং - Asymmetric Cards & Shrink-Slide Stage</title>
     <style>
         * {
             margin: 0;
@@ -167,7 +167,7 @@
             text-align: center;
         }
 
-        /* ট্রানজিশন টাইপ: ক্রসফেড/ডিজলভ + পজিশন শিফট + স্কেল জুম + ফোকাস শিফট */
+        /* Shrink-and-Slide Exit + Incoming Entrance */
         .scene-layer {
             position: absolute;
             inset: 0;
@@ -179,12 +179,12 @@
             pointer-events: none;
 
             opacity: 0;
-            filter: blur(14px);
-            transform: translate3d(38px, 22px, 0) scale(0.91);
+            filter: blur(10px);
+            transform: translate3d(140px, 12px, 0) scale(0.84);
             transition:
-                opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.62s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+                opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
             will-change: opacity, filter, transform;
         }
 
@@ -195,10 +195,11 @@
             pointer-events: auto;
         }
 
+        /* কার্ড ও লেখা ছোট হয়ে সাইডে সরে যাওয়ার বিদায়ী অবস্থা */
         .scene-layer.exiting {
             opacity: 0;
-            filter: blur(16px);
-            transform: translate3d(-38px, -18px, 0) scale(1.06);
+            filter: blur(8px);
+            transform: translate3d(-170px, -8px, 0) scale(0.66);
         }
 
         .scene-inner {
@@ -220,9 +221,9 @@
             padding: 4px 14px;
             border-radius: 99px;
             opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(-16px, 10px, 0) scale(0.88);
-            transition: all 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
+            filter: blur(6px);
+            transform: translate3d(40px, 8px, 0) scale(0.85);
+            transition: all 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
         }
 
         .scene-layer.active .scene-badge {
@@ -231,7 +232,14 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        /* টাইটেল ও Highlight Accent (মূল শব্দের নিচে/পেছনে হলুদ হাইলাইট বার) */
+        .scene-layer.exiting .scene-badge {
+            opacity: 0;
+            filter: blur(6px);
+            transform: translate3d(-90px, 0, 0) scale(0.68);
+            transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* টাইটেল ও Highlight Accent */
         .scene-heading {
             font-size: clamp(1.25rem, 2.3vw, 1.9rem);
             font-weight: 700;
@@ -239,15 +247,22 @@
             text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
             line-height: 1.3;
             opacity: 0;
-            filter: blur(10px);
-            transform: translate3d(18px, 12px, 0) scale(0.94);
-            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s;
+            filter: blur(8px);
+            transform: translate3d(55px, 10px, 0) scale(0.9);
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.14s;
         }
 
         .scene-layer.active .scene-heading {
             opacity: 1;
             filter: blur(0px);
             transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        .scene-layer.exiting .scene-heading {
+            opacity: 0;
+            filter: blur(8px);
+            transform: translate3d(-110px, 0, 0) scale(0.68);
+            transition: all 0.46s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .accent-highlight {
@@ -284,9 +299,9 @@
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
             max-width: 740px;
             opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(0, 14px, 0) scale(0.95);
-            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
+            filter: blur(6px);
+            transform: translate3d(45px, 10px, 0) scale(0.92);
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
         }
 
         .scene-layer.active .scene-subtext {
@@ -295,42 +310,110 @@
             transform: translate3d(0, 0, 0) scale(1);
         }
 
-        /* কার্ড গ্রিড ও ভিজ্যুয়াল ব্যাজ */
+        .scene-layer.exiting .scene-subtext {
+            opacity: 0;
+            filter: blur(6px);
+            transform: translate3d(-95px, 0, 0) scale(0.7);
+            transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* ভিন্ন সাইজের কার্ড গ্রিড (Asymmetric / Varied Sizing) */
         .cards-grid {
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(var(--cols, 4), 1fr);
+            grid-template-columns: repeat(12, 1fr);
             gap: 12px;
             margin-top: 6px;
+            align-items: stretch;
         }
 
         .info-card {
-            background: rgba(6, 36, 48, 0.42);
+            background: rgba(6, 36, 48, 0.44);
             border: 1px solid rgba(250, 204, 21, 0.28);
             border-radius: 14px;
-            padding: 12px 10px;
+            padding: 12px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 5px;
+            grid-column: span var(--span, 4);
             opacity: 0;
-            filter: blur(10px);
-            transform: translate3d(0, 22px, 0) scale(0.9);
+            filter: blur(8px);
+            transform: translate3d(90px, 14px, 0) scale(0.82);
             transition:
-                opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+                opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.54s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .info-card:nth-child(1) { transition-delay: 0.20s; transform: translate3d(-16px, 20px, 0) scale(0.9); }
-        .info-card:nth-child(2) { transition-delay: 0.24s; transform: translate3d(-6px, 22px, 0) scale(0.9); }
-        .info-card:nth-child(3) { transition-delay: 0.28s; transform: translate3d(6px, 22px, 0) scale(0.9); }
-        .info-card:nth-child(4) { transition-delay: 0.32s; transform: translate3d(16px, 20px, 0) scale(0.9); }
+        /* বড় ফিচার কার্ডের স্টাইল */
+        .info-card.size-lg {
+            background: rgba(10, 54, 72, 0.52);
+            border-color: rgba(250, 204, 21, 0.52);
+            padding: 16px 16px;
+        }
+
+        .info-card.size-lg .card-visual {
+            width: 54px;
+            height: 54px;
+            font-size: 1.8rem;
+            background: rgba(250, 204, 21, 0.2);
+        }
+
+        .info-card.size-lg .card-title {
+            font-size: 1.05rem;
+        }
+
+        .info-card.size-lg .card-desc {
+            font-size: 0.84rem;
+        }
+
+        /* ছোট কার্ডের স্টাইল */
+        .info-card.size-sm {
+            padding: 10px 8px;
+            opacity: 0.94;
+        }
+
+        .info-card.size-sm .card-visual {
+            width: 36px;
+            height: 36px;
+            font-size: 1.15rem;
+        }
+
+        .info-card.size-sm .card-title {
+            font-size: 0.82rem;
+        }
+
+        .info-card.size-sm .card-desc {
+            font-size: 0.7rem;
+        }
+
+        .info-card:nth-child(1) { transition-delay: 0.16s; }
+        .info-card:nth-child(2) { transition-delay: 0.21s; }
+        .info-card:nth-child(3) { transition-delay: 0.26s; }
+        .info-card:nth-child(4) { transition-delay: 0.31s; }
 
         .scene-layer.active .info-card {
             opacity: 1;
             filter: blur(0px);
             transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        .scene-layer.active .info-card.size-sm {
+            opacity: 0.92;
+            transform: translate3d(0, 0, 0) scale(0.95);
+        }
+
+        /* বিদায়ী অবস্থায় কার্ডগুলো ছোট হয়ে পাশে সরে যাওয়া */
+        .scene-layer.exiting .info-card {
+            opacity: 0;
+            filter: blur(8px);
+            transform: translate3d(-140px, -6px, 0) scale(0.62);
+            transition:
+                opacity 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .card-visual {
@@ -388,7 +471,6 @@
             gap: 5px 7px;
         }
 
-        /* মূল শব্দের নিচে/পেছনে হলুদ হাইলাইট বার + টাইপিং অ্যাকসেন্ট */
         .k-word {
             position: relative;
             color: rgba(255, 255, 255, 0.62);
@@ -401,7 +483,6 @@
             display: inline-block;
         }
 
-        /* শব্দের পেছনে/নিচে সলিড হলুদ হাইলাইট বার */
         .k-word::after {
             content: "";
             position: absolute;
@@ -441,7 +522,6 @@
             border-radius: 6px;
         }
 
-        /* টাইপিং কার্সর অ্যাকসেন্ট */
         .typing-caret {
             display: inline-block;
             width: 3px;
@@ -464,7 +544,6 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* প্লে/পজ টাচ ফিডব্যাক */
         .touch-feedback {
             position: absolute;
             top: 50%;
@@ -517,7 +596,7 @@
             </div>
         </header>
 
-        <!-- ক্রসফেড / ডিজলভ ও ফোকাস শিফট ভিউপোর্ট -->
+        <!-- Shrink-and-Slide Exit + Incoming Entrance ভিউপোর্ট -->
         <section class="visual-viewport" id="visualViewport"></section>
 
         <!-- ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স -->
@@ -528,9 +607,7 @@
     </main>
 
     <script>
-        /* =====================================================================
-           ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস
-           ===================================================================== */
+        /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
         const canvas = document.getElementById('networkCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, nodes = [];
@@ -596,9 +673,7 @@
         initNetwork();
         animateNetwork();
 
-        /* =====================================================================
-           ২. Web Audio API সাউন্ড ইঞ্জিন (প্রোগ্রেস টিক ও ব্যাকগ্রাউন্ড সাউন্ড ছাড়া)
-           ===================================================================== */
+        /* ২. Web Audio API সাউন্ড ইঞ্জিন */
         class StageSoundEngine {
             constructor() {
                 this.ctx = null;
@@ -721,7 +796,9 @@
         }
 
         /* =====================================================================
-           ৩. ১০টি সিন (কার্ড, টাইটেল, ভিজ্যুয়াল ও আইকন + Highlight Accent)
+           ৩. ১০টি সিন (ভিন্ন সাইজের কার্ড ও ভিজ্যুয়াল; ক্যাপশন ও ৫s সময় অপরিবর্তিত)
+           span: 12-column grid অনুযায়ী (যেমন 6 = অর্ধেক, 4 = এক-তৃতীয়াংশ, 3 = এক-চতুর্থাংশ)
+           size: 'lg' (বড়), 'md' (মাঝারি), 'sm' (ছোট)
            ===================================================================== */
         const scenes = [
             {
@@ -732,10 +809,9 @@
                 subtext: "সময় বাঁচিয়ে মাত্র কয়েক সেকেন্ডেই যেকোনো কাগজপত্র ডিজিটাল করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "🤖", title: "AI ইঞ্জিন", desc: "স্মার্ট ও অটোমেটিক" },
-                    { visual: "⚡", title: "দ্রুত গতি", desc: "সময় নষ্ট হবে না" },
-                    { visual: "📄", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ডকুমেন্ট" },
-                    { visual: "📲", title: "স্মার্ট ওয়ার্কফ্লো", desc: "সহজ প্রসেস" }
+                    { visual: "🤖", title: "AI স্মার্ট স্ক্যান", desc: "দ্রুত ও নির্ভুল ডকুমেন্ট ক্যাপচার", span: 5, size: "lg" },
+                    { visual: "⚡", title: "সময় সাশ্রয়", desc: "সেকেন্ডেই কাজ শেষ", span: 3, size: "sm" },
+                    { visual: "📄", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ফাইল", span: 4, size: "md" }
                 ],
                 caption: "এখন AI-এর যুগ! একটি ডকুমেন্ট স্ক্যান করতে আর সময় নষ্ট করার প্রয়োজন নেই।"
             },
@@ -747,9 +823,9 @@
                 subtext: "দোকানে বা স্ক্যানারের কাছে যাওয়ার কোনো প্রয়োজন নেই",
                 duration: 5000,
                 cards: [
-                    { visual: "📱", title: "মোবাইল ক্যামেরা", desc: "হাতের মুঠোয় সমাধান" },
-                    { visual: "🪪", title: "আইডি ও ফর্ম", desc: "সহজেই স্ক্যান করুন" },
-                    { visual: "🧾", title: "রসিদ ও নোট", desc: "দ্রুত সংরক্ষণ করুন" }
+                    { visual: "📱", title: "পকেট স্ক্যানার", desc: "যেকোনো স্মার্টফোনেই সহজ ও দ্রুত সমাধান", span: 6, size: "lg" },
+                    { visual: "🪪", title: "আইডি কার্ড", desc: "সহজ স্ক্যান", span: 3, size: "sm" },
+                    { visual: "🧾", title: "বিল ও রসিদ", desc: "দ্রুত সংরক্ষণ", span: 3, size: "sm" }
                 ],
                 caption: "আপনার হাতে থাকা স্মার্টফোন দিয়েই খুব সহজে স্ক্যান করতে পারবেন যেকোনো কাগজপত্র।"
             },
@@ -761,8 +837,8 @@
                 subtext: "আপনার ফোনে থাকা Google Drive অ্যাপটি ওপেন করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "🔺", title: "Drive অ্যাপ", desc: "হোম স্ক্রিন থেকে খুলুন" },
-                    { visual: "☁️", title: "ক্লাউড স্টোরেজ", desc: "ফাইল সুরক্ষিত থাকে" }
+                    { visual: "🔺", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
+                    { visual: "☁️", title: "ক্লাউড সিঙ্ক", desc: "ফাইল নিরাপদ", span: 4, size: "sm" }
                 ],
                 caption: "প্রথমে আপনার ফোনে Google Drive অ্যাপটি ওপেন করুন।"
             },
@@ -774,8 +850,8 @@
                 subtext: "নিচের প্লাস (+) আইকনে ট্যাপ করে Scan অপশনে ক্লিক করুন",
                 duration: 5000,
                 cards: [
-                    { visual: "➕", title: "প্লাস (+) আইকন", desc: "নিচের ডান কোণায়" },
-                    { visual: "📷", title: "Scan অপশন", desc: "স্ক্যান মোড চালু করুন" }
+                    { visual: "➕", title: "প্লাস (+) আইকন", desc: "নিচের কোণায় ট্যাপ", span: 4, size: "sm" },
+                    { visual: "📷", title: "Scan অপশন বেছে নিন", desc: "সরাসরি ক্যামেরা স্ক্যান মোড চালু হবে", span: 8, size: "lg" }
                 ],
                 caption: "এরপর নিচের প্লাস (+) আইকনে ক্লিক করুন এবং Scan অপশনটি বেছে নিন।"
             },
@@ -787,8 +863,8 @@
                 subtext: "ভালো আলো ও পরিষ্কার ফ্রেমে কাগজটি স্থির রাখুন",
                 duration: 5000,
                 cards: [
-                    { visual: "💡", title: "পর্যাপ্ত আলো", desc: "লেখা স্পষ্ট আসবে" },
-                    { visual: "📐", title: "সঠিক অ্যাঙ্গেল", desc: "চার কোণা ফ্রেমে রাখুন" }
+                    { visual: "📄", title: "ক্যামেরার সামনে ডকুমেন্ট", desc: "কাগজটি সমতল রেখে সোজা ফ্রেমে ধরুন", span: 7, size: "lg" },
+                    { visual: "💡", title: "ভালো আলো", desc: "স্পষ্ট লেখা", span: 5, size: "sm" }
                 ],
                 caption: "এবার যে ডকুমেন্টটি স্ক্যান করবেন, সেটি ক্যামেরার সামনে ধরুন।"
             },
@@ -800,8 +876,8 @@
                 subtext: "অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে",
                 duration: 5000,
                 cards: [
-                    { visual: "📸", title: "ক্যাপচার", desc: "ক্যামেরা দিয়ে ছবি তুলুন" },
-                    { visual: "🎯", title: "চারপাশ শনাক্ত", desc: "স্বয়ংক্রিয় বর্ডার সিলেকশন" }
+                    { visual: "📸", title: "ছবি তুলুন", desc: "শাটার চাপুন", span: 4, size: "sm" },
+                    { visual: "🎯", title: "স্বয়ংক্রিয় চারপাশ শনাক্তকরণ", desc: "AI নিজে থেকেই ডকুমেন্টের বর্ডার ধরে নেবে", span: 8, size: "lg" }
                 ],
                 caption: "ক্যামেরা দিয়ে ছবি তুলুন। অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে।"
             },
@@ -813,8 +889,9 @@
                 subtext: "চারপাশ কেটে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার দিন",
                 duration: 5000,
                 cards: [
-                    { visual: "✂️", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন" },
-                    { visual: "🎨", title: "কালার ফিল্টার", desc: "কালার বা সাদা-কালো" }
+                    { visual: "✂️", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন", span: 4, size: "md" },
+                    { visual: "🎨", title: "কালার ও B&W ফিল্টার", desc: "প্রয়োজন অনুযায়ী সেরা লুক দিন", span: 5, size: "lg" },
+                    { visual: "✨", title: "ক্লিয়ার ভিউ", desc: "সহজে পঠনযোগ্য", span: 3, size: "sm" }
                 ],
                 caption: "প্রয়োজনে ছবির চারপাশ Crop করে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার ব্যবহার করুন।"
             },
@@ -826,8 +903,8 @@
                 subtext: "এক ক্লিকেই আপনার ডকুমেন্টটি সংরক্ষিত হয়ে যাবে",
                 duration: 5000,
                 cards: [
-                    { visual: "🔎", title: "প্রিভিউ চেক", desc: "সব ঠিক আছে কি না দেখুন" },
-                    { visual: "💾", title: "Save করুন", desc: "ডকুমেন্ট সেভ হয়ে যাবে" }
+                    { visual: "🔎", title: "প্রিভিউ চেক", desc: "লেখাগুলো ঠিক আছে কি না দেখুন", span: 4, size: "sm" },
+                    { visual: "💾", title: "Save বাটনে ক্লিক", desc: "ডকুমেন্ট সাথে সাথে সেভ হয়ে যাবে", span: 8, size: "lg" }
                 ],
                 caption: "সবকিছু ঠিক থাকলে Save বাটনে ক্লিক করুন।"
             },
@@ -839,9 +916,9 @@
                 subtext: "WhatsApp, Messenger কিংবা ইমেইলে মুহূর্তেই পাঠাতে পারবেন",
                 duration: 5000,
                 cards: [
-                    { visual: "📑", title: "PDF ফাইল", desc: "সহজ ও পরিচ্ছন্ন ফরম্যাট" },
-                    { visual: "💬", title: "WhatsApp / Messenger", desc: "দ্রুত শেয়ার করুন" },
-                    { visual: "📧", title: "ইমেইল", desc: "সহজে পাঠিয়ে দিন" }
+                    { visual: "📑", title: "রেডি PDF ফাইল", desc: "ডকুমেন্ট স্বয়ংক্রিয়ভাবে PDF-এ রূপান্তর হবে", span: 6, size: "lg" },
+                    { visual: "💬", title: "WhatsApp / Messenger", desc: "দ্রুত শেয়ার", span: 3, size: "sm" },
+                    { visual: "📧", title: "ইমেইল", desc: "সহজে পাঠান", span: 3, size: "sm" }
                 ],
                 caption: "ব্যস! আপনার ডকুমেন্টটি PDF ফাইলে তৈরি হয়ে যাবে। এখন চাইলে WhatsApp, Messenger কিংবা ইমেইলে পাঠাতে পারবেন।"
             },
@@ -854,9 +931,9 @@
                 duration: 5000,
                 isEnding: true,
                 cards: [
-                    { visual: "⏱️", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত ডকুমেন্ট স্ক্যান" },
-                    { visual: "👍", title: "লাইক ও শেয়ার", desc: "সহজ টিপস ছড়িয়ে দিন" },
-                    { visual: "🔔", title: "পেজ ফলো করুন", desc: "নতুন টিপস পেতে যুক্ত থাকুন" }
+                    { visual: "⏱️", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত স্ক্যান", span: 3, size: "sm" },
+                    { visual: "🔔", title: "পেজ ফলো করে সঙ্গে থাকুন", desc: "নতুন AI ও টেক টিপস সবার আগে পেতে যুক্ত থাকুন", span: 6, size: "lg" },
+                    { visual: "👍", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm" }
                 ],
                 caption: "মাত্র কয়েক সেকেন্ডেই ডকুমেন্ট স্ক্যান করার এই সহজ ট্রিকটি কাজে লাগান। এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন"
             }
@@ -904,7 +981,7 @@
             layer.className = 'scene-layer';
 
             const cardsHTML = scene.cards.map(c => `
-                <div class="info-card">
+                <div class="info-card size-${c.size || 'md'}" style="--span: ${c.span || 4};">
                     <div class="card-visual">${c.visual}</div>
                     <div class="card-title">${c.title}</div>
                     <div class="card-desc">${c.desc}</div>
@@ -918,7 +995,7 @@
                         ${scene.headingBefore}<span class="accent-highlight">${scene.headingAccent}</span>${scene.headingAfter}
                     </h1>
                     <p class="scene-subtext">${scene.subtext}</p>
-                    <div class="cards-grid" style="--cols: ${scene.cards.length};">${cardsHTML}</div>
+                    <div class="cards-grid">${cardsHTML}</div>
                 </div>
             `;
             return layer;
@@ -936,13 +1013,14 @@
             statusText.textContent = `SCENE ${index + 1} / ${scenes.length}`;
             soundEngine.playTransitionWhoosh();
 
+            // পুরোনো সিনের কার্ড ও লেখা ছোট হয়ে পাশে সরে যাবে, সাথে সাথেই নতুন সিন ঢুকবে
             if (activeLayerEl) {
                 const oldLayer = activeLayerEl;
                 oldLayer.classList.remove('active');
                 oldLayer.classList.add('exiting');
                 setTimeout(() => {
                     if (oldLayer.parentNode) oldLayer.remove();
-                }, 680);
+                }, 560);
             }
 
             const newLayer = createSceneLayer(scene);
