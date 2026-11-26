@@ -3,63 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড</title>
+    <title>9:16 Vertical Reel</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            /* ছবির মতো ডার্ক সায়ান-নীল রেডিয়াল গ্রেডিয়েন্ট ব্যাকগ্রাউন্ড */
             background: radial-gradient(circle at 50% 50%, #0d4559 0%, #062430 60%, #031218 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ffffff;
-            overflow-x: hidden;
-        }
-
-        /* ব্যাকগ্রাউন্ড ক্যানভাস */
-        #networkCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-
-        /* নমুনা কন্টেন্ট বক্স */
-        .container {
+            width: 100vw;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #ffffff;
+        }
+
+        #networkCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .reel-stage {
+            position: relative;
+            z-index: 10;
+            aspect-ratio: 9 / 16;
+            height: min(94vh, 860px);
+            max-width: 94vw;
+            border: none;
+            border-radius: 24px;
+            background: rgba(4, 24, 34, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #38bdf8, #a5f3fc, #38bdf8, transparent);
+            box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .scan-line.scanning {
+            animation: scanSweep 1.1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        @keyframes scanSweep {
+            0% { top: 0%; opacity: 0; }
+            15% { opacity: 0.95; }
+            85% { opacity: 0.95; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .reel-header {
+            padding: 16px 16px 8px;
+            z-index: 20;
+        }
+
+        .progress-bars {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 3.5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            transition: width 0.08s linear;
+        }
+
+        .top-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(13, 69, 89, 0.65);
+            padding: 6px 12px;
+            border-radius: 99px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #bae6fd;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22d3ee;
+            box-shadow: 0 0 8px #22d3ee;
+            animation: pulse 1.4s infinite;
+        }
+
+        .reel-stage.paused .pulse-dot {
+            background: #f59e0b;
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; }
+        }
+
+        .sound-toggle {
+            background: rgba(13, 69, 89, 0.75);
+            color: #e0f2fe;
+            border: none;
+            padding: 7px 13px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.15s ease, background 0.2s ease;
+            z-index: 30;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(20, 95, 122, 0.9);
+            transform: scale(1.04);
+        }
+
+        .sound-toggle.muted {
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.65);
+        }
+
+        .visual-viewport {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
-        }
-
-        .content-box {
-            background: rgba(6, 36, 48, 0.72);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(58, 152, 184, 0.35);
-            padding: 40px 30px;
-            border-radius: 16px;
-            max-width: 550px;
             text-align: center;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
         }
 
-        .content-box h1 {
-            font-size: 2rem;
-            color: #5bc8eb;
-            margin-bottom: 12px;
+        .slide-card {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            opacity: 0;
+            transform: translateY(28px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .content-box p {
-            color: #cde8f2;
-            line-height: 1.6;
-            font-size: 1.05rem;
+        .slide-card.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .popup-chip {
+            display: inline-block;
+            background: linear-gradient(135deg, #0284c7, #06b6d4);
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.35);
+            transform: scale(0.5);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .popup-chip.pop {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .visual-icon {
+            width: 84px;
+            height: 84px;
+            border-radius: 22px;
+            background: rgba(56, 189, 248, 0.14);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.4rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            transform: scale(0.7);
+            opacity: 0;
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s, opacity 0.35s ease 0.1s;
+        }
+
+        .visual-icon.pop {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .slide-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #f0f9ff;
+            line-height: 1.3;
+        }
+
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 24px;
+            margin-top: 4px;
+        }
+
+        .voice-wave span {
+            width: 3.5px;
+            height: 6px;
+            background: #38bdf8;
+            border-radius: 4px;
+            transition: height 0.12s ease;
+        }
+
+        .karaoke-container {
+            padding: 20px 22px 32px;
+            background: linear-gradient(to top, rgba(2, 14, 20, 0.92) 0%, rgba(2, 14, 20, 0.45) 75%, transparent 100%);
+            text-align: center;
+            z-index: 15;
+        }
+
+        .karaoke-caption {
+            font-size: 1.32rem;
+            font-weight: 700;
+            line-height: 1.55;
+            min-height: 4.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 6px 8px;
+        }
+
+        .k-word {
+            color: rgba(255, 255, 255, 0.38);
+            transition: color 0.12s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), text-shadow 0.12s ease;
+            display: inline-block;
+        }
+
+        .k-word.spoken {
+            color: #e0f2fe;
+        }
+
+        .k-word.active {
+            color: #38bdf8;
+            transform: scale(1.14) translateY(-2px);
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.85);
+        }
+
+        .tap-hint {
+            margin-top: 12px;
+            font-size: 0.72rem;
+            color: rgba(186, 230, 253, 0.55);
+            letter-spacing: 0.4px;
+        }
+
+        .touch-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.6);
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(3, 18, 24, 0.75);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            color: #38bdf8;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 40;
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .touch-feedback.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
     </style>
 </head>
@@ -67,109 +333,391 @@
 
     <canvas id="networkCanvas"></canvas>
 
-    <div class="container">
-        <div class="content-box">
-            <h1>নেটওয়ার্ক ব্যাকগ্রাউন্ড</h1>
-            <p>কোনো আলাদা ইমেজ ছাড়াই শুধুমাত্র কোডের মাধ্যমে আপনার ছবির মতো নেটওয়ার্ক নোড ও লাইন ডিজাইন তৈরি করা হয়েছে।</p>
-        </div>
-    </div>
+    <main class="reel-stage" id="reelStage">
+        <div class="scan-line" id="scanLine"></div>
+        <div class="touch-feedback" id="touchFeedback">⏸</div>
+
+        <header class="reel-header">
+            <div class="progress-bars" id="progressBars"></div>
+            <div class="top-controls">
+                <div class="status-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="statusText">PLAYING</span>
+                </div>
+                <button type="button" class="sound-toggle" id="soundToggleBtn">
+                    <span id="soundIcon">🔊</span>
+                    <span id="soundLabel">Sound ON</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="visual-viewport">
+            <div class="slide-card" id="slideCard">
+                <span class="popup-chip" id="popupChip"></span>
+                <div class="visual-icon" id="visualIcon"></div>
+                <h2 class="slide-title" id="slideTitle"></h2>
+                <div class="voice-wave" id="voiceWave">
+                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="karaoke-container">
+            <div class="karaoke-caption" id="karaokeCaption"></div>
+            <div class="tap-hint">স্ক্রিনে টাচ করে প্লে / পজ অটো-টগল করুন</div>
+        </footer>
+    </main>
 
     <script>
         const canvas = document.getElementById('networkCanvas');
         const ctx = canvas.getContext('2d');
+        let width, height, nodes = [];
 
-        let width, height;
-        let nodes = [];
-
-        // সেটিংস (ইচ্ছেমতো পরিবর্তন করতে পারেন)
-        const config = {
-            nodeDensity: 14000,       // সংখ্যা কমালে নোড বাড়বে
-            maxDistance: 145,         // কত দূরত্বের নোডগুলোর মধ্যে লাইন যুক্ত হবে
-            lineColor: 'rgba(56, 155, 188, 0.42)',
-            circleStroke: 'rgba(65, 175, 210, 0.75)',
-            circleFill: '#072a38',    // বৃত্তের ভেতরের রঙ (যাতে লাইন বৃত্তের ভেতর দিয়ে দেখা না যায়)
-            animate: false            // true করে দিলে নোডগুলো ধীরে ধীরে নড়তে থাকবে
-        };
-
-        function init() {
+        function initNetwork() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             nodes = [];
+            const count = Math.floor((width * height) / 14500);
 
-            const totalNodes = Math.floor((width * height) / config.nodeDensity);
-
-            for (let i = 0; i < totalNodes; i++) {
-                // ছবির মতো কিছু বড় এবং কিছু ছোট বৃত্ত তৈরি করা
+            for (let i = 0; i < count; i++) {
                 const isLarge = Math.random() > 0.72;
-                const radius = isLarge ? (Math.random() * 5 + 7) : (Math.random() * 3 + 3.5);
-
                 nodes.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.35,
-                    vy: (Math.random() - 0.5) * 0.35,
-                    radius: radius,
-                    lineWidth: isLarge ? 2 : 1.5
+                    vx: (Math.random() - 0.5) * 0.25,
+                    vy: (Math.random() - 0.5) * 0.25,
+                    radius: isLarge ? (Math.random() * 5 + 7) : (Math.random() * 3 + 3.5),
+                    lineWidth: isLarge ? 2 : 1.4
                 });
             }
         }
 
-        function draw() {
+        function animateNetwork() {
             ctx.clearRect(0, 0, width, height);
 
-            // ১. নোডগুলোর মধ্যে সংযোগকারী লাইন আঁকা
             for (let i = 0; i < nodes.length; i++) {
                 for (let j = i + 1; j < nodes.length; j++) {
                     const dx = nodes[i].x - nodes[j].x;
                     const dy = nodes[i].y - nodes[j].y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < config.maxDistance) {
+                    if (dist < 145) {
                         ctx.beginPath();
                         ctx.moveTo(nodes[i].x, nodes[i].y);
                         ctx.lineTo(nodes[j].x, nodes[j].y);
-                        ctx.strokeStyle = config.lineColor;
-                        ctx.lineWidth = 1.2;
+                        ctx.strokeStyle = 'rgba(56, 155, 188, 0.38)';
+                        ctx.lineWidth = 1.15;
                         ctx.stroke();
                     }
                 }
             }
 
-            // ২. ফাঁপা রিং বা বৃত্তগুলো আঁকা
             for (let i = 0; i < nodes.length; i++) {
                 const n = nodes[i];
-
-                // অ্যানিমেশন চালু থাকলে পজিশন আপডেট করা
-                if (config.animate) {
-                    n.x += n.vx;
-                    n.y += n.vy;
-
-                    if (n.x < 0 || n.x > width) n.vx *= -1;
-                    if (n.y < 0 || n.y > height) n.vy *= -1;
-                }
+                n.x += n.vx;
+                n.y += n.vy;
+                if (n.x < 0 || n.x > width) n.vx *= -1;
+                if (n.y < 0 || n.y > height) n.vy *= -1;
 
                 ctx.beginPath();
                 ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-                ctx.fillStyle = config.circleFill;
+                ctx.fillStyle = '#072a38';
                 ctx.fill();
-                ctx.strokeStyle = config.circleStroke;
+                ctx.strokeStyle = 'rgba(65, 175, 210, 0.75)';
                 ctx.lineWidth = n.lineWidth;
                 ctx.stroke();
             }
+            requestAnimationFrame(animateNetwork);
+        }
 
-            if (config.animate) {
-                requestAnimationFrame(draw);
+        window.addEventListener('resize', initNetwork);
+        initNetwork();
+        animateNetwork();
+
+        class ReelSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            unlock() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggle() {
+                this.unlock();
+                this.enabled = !this.enabled;
+                return this.enabled;
+            }
+
+            playSlide() {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(190, now);
+                osc.frequency.exponentialRampToValueAtTime(520, now + 0.24);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.14, now + 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.27);
+            }
+
+            playScan() {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(680, now);
+                osc.frequency.exponentialRampToValueAtTime(1450, now + 0.35);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.09, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            playPopup() {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(420, now);
+                osc.frequency.exponentialRampToValueAtTime(920, now + 0.11);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.16, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.14);
+            }
+
+            playKaraokeTick(wordIndex = 0) {
+                if (!this.enabled) return;
+                this.unlock();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const pitch = 780 + (wordIndex % 4) * 55;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(pitch, now);
+                osc.frequency.exponentialRampToValueAtTime(pitch * 0.65, now + 0.045);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.075, now + 0.008);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.055);
             }
         }
 
-        window.addEventListener('resize', () => {
-            init();
-            draw();
+        const soundEngine = new ReelSoundEngine();
+
+        const reelSlides = [
+            {
+                badge: "NODE SCAN • 01",
+                icon: "🔗",
+                title: "স্মার্ট নেটওয়ার্ক কানেকশন",
+                duration: 4400,
+                words: [
+                    { text: "প্রতিটি", start: 0.05, end: 0.18 },
+                    { text: "ডেটা", start: 0.18, end: 0.32 },
+                    { text: "নোড", start: 0.32, end: 0.46 },
+                    { text: "এখন", start: 0.46, end: 0.60 },
+                    { text: "রিয়েল-টাইমে", start: 0.60, end: 0.80 },
+                    { text: "যুক্ত", start: 0.80, end: 0.96 }
+                ]
+            },
+            {
+                badge: "AI SYNC • 02",
+                icon: "⚡",
+                title: "ভয়েস-সিঙ্কড অটোমেশন",
+                duration: 4600,
+                words: [
+                    { text: "দ্রুত", start: 0.05, end: 0.20 },
+                    { text: "স্ক্যান", start: 0.20, end: 0.36 },
+                    { text: "এবং", start: 0.36, end: 0.50 },
+                    { text: "নিখুঁত", start: 0.50, end: 0.68 },
+                    { text: "অডিও", start: 0.68, end: 0.82 },
+                    { text: "সিঙ্কিং", start: 0.82, end: 0.97 }
+                ]
+            }
+        ];
+
+        const reelStage = document.getElementById('reelStage');
+        const progressBarsEl = document.getElementById('progressBars');
+        const slideCard = document.getElementById('slideCard');
+        const popupChip = document.getElementById('popupChip');
+        const visualIcon = document.getElementById('visualIcon');
+        const slideTitle = document.getElementById('slideTitle');
+        const karaokeCaption = document.getElementById('karaokeCaption');
+        const scanLine = document.getElementById('scanLine');
+        const statusText = document.getElementById('statusText');
+        const touchFeedback = document.getElementById('touchFeedback');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundLabel = document.getElementById('soundLabel');
+        const waveBars = document.querySelectorAll('#voiceWave span');
+
+        let currentSlideIndex = 0;
+        let isPlaying = true;
+        let elapsedInSlide = 0;
+        let lastTimestamp = null;
+        let lastSpokenWordIndex = -1;
+        let popupTimeout = null;
+        let feedbackTimeout = null;
+
+        reelSlides.forEach(() => {
+            const track = document.createElement('div');
+            track.className = 'progress-track';
+            const fill = document.createElement('div');
+            fill.className = 'progress-fill';
+            track.appendChild(fill);
+            progressBarsEl.appendChild(track);
+        });
+        const progressFills = document.querySelectorAll('.progress-fill');
+
+        function loadSlide(index) {
+            currentSlideIndex = index;
+            elapsedInSlide = 0;
+            lastSpokenWordIndex = -1;
+            const slide = reelSlides[index];
+
+            slideCard.classList.remove('active');
+            popupChip.classList.remove('pop');
+            visualIcon.classList.remove('pop');
+            scanLine.classList.remove('scanning');
+            void slideCard.offsetWidth;
+
+            popupChip.textContent = slide.badge;
+            visualIcon.textContent = slide.icon;
+            slideTitle.textContent = slide.title;
+
+            karaokeCaption.innerHTML = '';
+            slide.words.forEach((w, idx) => {
+                const span = document.createElement('span');
+                span.className = 'k-word';
+                span.textContent = w.text;
+                span.dataset.idx = idx;
+                karaokeCaption.appendChild(span);
+            });
+
+            slideCard.classList.add('active');
+            scanLine.classList.add('scanning');
+            soundEngine.playSlide();
+            setTimeout(() => soundEngine.playScan(), 120);
+
+            clearTimeout(popupTimeout);
+            popupTimeout = setTimeout(() => {
+                popupChip.classList.add('pop');
+                visualIcon.classList.add('pop');
+                soundEngine.playPopup();
+            }, 260);
+
+            progressFills.forEach((fill, i) => {
+                fill.style.width = i < index ? '100%' : '0%';
+            });
+        }
+
+        function updateWave(active) {
+            waveBars.forEach((bar) => {
+                if (active && isPlaying) {
+                    bar.style.height = `${Math.floor(Math.random() * 18 + 5)}px`;
+                } else {
+                    bar.style.height = '5px';
+                }
+            });
+        }
+
+        function tick(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const delta = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            if (isPlaying) {
+                const slide = reelSlides[currentSlideIndex];
+                elapsedInSlide += delta;
+                const progress = Math.min(elapsedInSlide / slide.duration, 1);
+
+                progressFills[currentSlideIndex].style.width = `${progress * 100}%`;
+
+                const wordEls = karaokeCaption.querySelectorAll('.k-word');
+                let activeIdx = -1;
+
+                slide.words.forEach((w, idx) => {
+                    if (progress >= w.start && progress <= w.end) {
+                        activeIdx = idx;
+                        wordEls[idx].classList.add('active');
+                        wordEls[idx].classList.remove('spoken');
+                    } else if (progress > w.end) {
+                        wordEls[idx].classList.remove('active');
+                        wordEls[idx].classList.add('spoken');
+                    } else {
+                        wordEls[idx].classList.remove('active', 'spoken');
+                    }
+                });
+
+                if (activeIdx !== -1 && activeIdx !== lastSpokenWordIndex) {
+                    lastSpokenWordIndex = activeIdx;
+                    soundEngine.playKaraokeTick(activeIdx);
+                }
+
+                updateWave(activeIdx !== -1);
+
+                if (progress >= 1) {
+                    const nextIndex = (currentSlideIndex + 1) % reelSlides.length;
+                    loadSlide(nextIndex);
+                }
+            } else {
+                updateWave(false);
+            }
+
+            requestAnimationFrame(tick);
+        }
+
+        reelStage.addEventListener('click', (e) => {
+            if (e.target.closest('#soundToggleBtn')) return;
+            soundEngine.unlock();
+            isPlaying = !isPlaying;
+            reelStage.classList.toggle('paused', !isPlaying);
+            statusText.textContent = isPlaying ? 'PLAYING' : 'PAUSED';
+            touchFeedback.textContent = isPlaying ? '▶' : '⏸';
+            touchFeedback.classList.add('show');
+            clearTimeout(feedbackTimeout);
+            feedbackTimeout = setTimeout(() => {
+                touchFeedback.classList.remove('show');
+            }, 550);
         });
 
-        init();
-        draw();
-    </script>
+        soundToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isSoundOn = soundEngine.toggle();
+            soundToggleBtn.classList.toggle('muted', !isSoundOn);
+            soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
+            soundLabel.textContent = isSoundOn ? 'Sound ON' : 'Sound OFF';
+            if (isSoundOn) soundEngine.playPopup();
+        });
 
+        loadSlide(0);
+        requestAnimationFrame(tick);
+    </script>
 </body>
 </html>
