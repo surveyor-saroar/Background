@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>9:16 Vertical Reel - Transparent Over Network Background</title>
+    <title>16:9 Transparent Karaoke Stage - Network Nodes</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +25,7 @@
             color: #ffffff;
         }
 
-        /* আপনার নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
+        /* নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
         #networkCanvas {
             position: fixed;
             inset: 0;
@@ -35,13 +35,13 @@
             pointer-events: none;
         }
 
-        /* ঠিক মাঝখানে বর্ডার ও ব্যাকগ্রাউন্ড ফিল ছাড়া 9:16 রিল স্টেজ */
-        .reel-stage {
+        /* ঠিক মাঝখানে বর্ডার ও ব্যাকগ্রাউন্ড ফিল ছাড়া 16:9 স্টেজ */
+        .stage-16-9 {
             position: relative;
             z-index: 10;
-            aspect-ratio: 9 / 16;
-            height: min(94vh, 860px);
-            max-width: 94vw;
+            aspect-ratio: 16 / 9;
+            width: min(94vw, 1280px);
+            max-height: 92vh;
             border: none;
             background: transparent;
             box-shadow: none;
@@ -52,13 +52,14 @@
             cursor: pointer;
         }
 
+        /* স্ক্যানিং লাইন অ্যানিমেশন */
         .scan-line {
             position: absolute;
             left: 0;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #38bdf8, #a5f3fc, #38bdf8, transparent);
-            box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7;
+            background: linear-gradient(90deg, transparent, #facc15, #fef08a, #facc15, transparent);
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
             opacity: 0;
             pointer-events: none;
             z-index: 5;
@@ -70,20 +71,21 @@
 
         @keyframes scanSweep {
             0% { top: 0%; opacity: 0; }
-            15% { opacity: 0.95; }
-            85% { opacity: 0.95; }
+            15% { opacity: 0.9; }
+            85% { opacity: 0.9; }
             100% { top: 100%; opacity: 0; }
         }
 
-        .reel-header {
-            padding: 16px 14px 8px;
+        /* উপরের প্রগ্রেস বার ও স্ট্যাটাস */
+        .stage-header {
+            padding: 14px 20px 6px;
             z-index: 20;
         }
 
         .progress-bars {
             display: flex;
-            gap: 6px;
-            margin-bottom: 14px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .progress-track {
@@ -97,12 +99,11 @@
         .progress-fill {
             width: 0%;
             height: 100%;
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
+            background: #facc15;
             transition: width 0.08s linear;
         }
 
-        .top-controls {
+        .status-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -113,59 +114,32 @@
             align-items: center;
             gap: 7px;
             background: rgba(3, 18, 24, 0.45);
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 99px;
             font-size: 0.78rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
-            color: #e0f2fe;
+            color: #fef9c3;
         }
 
         .pulse-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #22d3ee;
-            box-shadow: 0 0 8px #22d3ee;
+            background: #facc15;
             animation: pulse 1.4s infinite;
         }
 
-        .reel-stage.paused .pulse-dot {
-            background: #f59e0b;
-            box-shadow: none;
+        .stage-16-9.paused .pulse-dot {
+            background: #94a3b8;
             animation: none;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.5; }
+            50% { transform: scale(1.35); opacity: 0.55; }
         }
 
-        .sound-toggle {
-            background: rgba(3, 18, 24, 0.45);
-            color: #e0f2fe;
-            border: none;
-            padding: 7px 13px;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: transform 0.15s ease, background 0.2s ease;
-            z-index: 30;
-        }
-
-        .sound-toggle:hover {
-            background: rgba(3, 18, 24, 0.65);
-            transform: scale(1.04);
-        }
-
-        .sound-toggle.muted {
-            color: #94a3b8;
-        }
-
+        /* মাঝখানের স্বচ্ছ স্লাইড ও পপ-আপ অ্যানিমেশন এরিয়া */
         .visual-viewport {
             flex: 1;
             position: relative;
@@ -173,19 +147,18 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 12px 24px;
             text-align: center;
         }
 
         .slide-card {
-            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             opacity: 0;
-            transform: translateY(28px) scale(0.95);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(24px) scale(0.96);
+            transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .slide-card.active {
@@ -195,18 +168,16 @@
 
         .popup-chip {
             display: inline-block;
-            background: linear-gradient(135deg, #0284c7, #06b6d4);
-            color: #ffffff;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            padding: 6px 14px;
+            background: #facc15;
+            color: #091820;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 5px 14px;
             border-radius: 99px;
-            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.35);
-            transform: scale(0.5);
+            transform: scale(0.6);
             opacity: 0;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
         }
 
         .popup-chip.pop {
@@ -215,18 +186,17 @@
         }
 
         .visual-icon {
-            width: 84px;
-            height: 84px;
-            border-radius: 22px;
-            background: rgba(56, 189, 248, 0.16);
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: rgba(250, 204, 21, 0.16);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2.4rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            font-size: 2.1rem;
             transform: scale(0.7);
             opacity: 0;
-            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s, opacity 0.35s ease 0.1s;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s, opacity 0.3s ease 0.08s;
         }
 
         .visual-icon.pop {
@@ -235,89 +205,77 @@
         }
 
         .slide-title {
-            font-size: 1.45rem;
+            font-size: clamp(1.35rem, 2.6vw, 2.2rem);
             font-weight: 700;
-            color: #f0f9ff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
-            line-height: 1.3;
+            color: #ffffff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
+            line-height: 1.25;
         }
 
-        .voice-wave {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            height: 24px;
-            margin-top: 4px;
-        }
-
-        .voice-wave span {
-            width: 3.5px;
-            height: 6px;
-            background: #38bdf8;
-            border-radius: 4px;
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-            transition: height 0.12s ease;
-        }
-
+        /* স্বচ্ছ কারাওকে ক্যাপশন - হলুদ সলিড কালার হাইলাইট */
         .karaoke-container {
-            padding: 20px 18px 28px;
+            padding: 12px 24px 22px;
             background: transparent;
             text-align: center;
             z-index: 15;
         }
 
         .karaoke-caption {
-            font-size: 1.35rem;
+            font-size: clamp(1.35rem, 2.5vw, 2.15rem);
             font-weight: 700;
-            line-height: 1.55;
-            min-height: 4.5rem;
+            line-height: 1.5;
+            min-height: 3.4rem;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 6px 8px;
+            gap: 8px 10px;
         }
 
         .k-word {
-            color: rgba(255, 255, 255, 0.42);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
-            transition: color 0.12s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), text-shadow 0.12s ease;
+            color: rgba(255, 255, 255, 0.55);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: transparent;
+            transition: background-color 0.12s ease, color 0.12s ease, transform 0.15s ease;
             display: inline-block;
         }
 
         .k-word.spoken {
-            color: #f0f9ff;
+            color: #ffffff;
         }
 
+        /* হলুদ সলিড কালার দিয়ে হাইলাইট */
         .k-word.active {
-            color: #38bdf8;
-            transform: scale(1.14) translateY(-2px);
-            text-shadow: 0 0 14px rgba(56, 189, 248, 0.9), 0 2px 10px rgba(0, 0, 0, 0.85);
+            background-color: #facc15;
+            color: #061820;
+            text-shadow: none;
+            transform: scale(1.08) translateY(-2px);
         }
 
         .tap-hint {
-            margin-top: 10px;
-            font-size: 0.72rem;
-            color: rgba(224, 242, 254, 0.65);
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
-            letter-spacing: 0.4px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.65);
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
         }
 
+        /* প্লে/পজ টাচ ফিডব্যাক */
         .touch-feedback {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.6);
-            width: 72px;
-            height: 72px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
-            background: rgba(3, 18, 24, 0.65);
+            background: rgba(3, 18, 24, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.8rem;
-            color: #38bdf8;
+            font-size: 1.7rem;
+            color: #facc15;
             opacity: 0;
             pointer-events: none;
             z-index: 40;
@@ -332,23 +290,21 @@
 </head>
 <body>
 
+    <!-- নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস -->
     <canvas id="networkCanvas"></canvas>
 
-    <main class="reel-stage" id="reelStage">
+    <!-- ঠিক মাঝখানে বর্ডার ছাড়া 16:9 স্টেজ -->
+    <main class="stage-16-9" id="stage169">
         <div class="scan-line" id="scanLine"></div>
         <div class="touch-feedback" id="touchFeedback">⏸</div>
 
-        <header class="reel-header">
+        <header class="stage-header">
             <div class="progress-bars" id="progressBars"></div>
-            <div class="top-controls">
+            <div class="status-row">
                 <div class="status-badge">
                     <span class="pulse-dot"></span>
                     <span id="statusText">PLAYING</span>
                 </div>
-                <button type="button" class="sound-toggle" id="soundToggleBtn">
-                    <span id="soundIcon">🔊</span>
-                    <span id="soundLabel">Sound ON</span>
-                </button>
             </div>
         </header>
 
@@ -357,9 +313,6 @@
                 <span class="popup-chip" id="popupChip"></span>
                 <div class="visual-icon" id="visualIcon"></div>
                 <h2 class="slide-title" id="slideTitle"></h2>
-                <div class="voice-wave" id="voiceWave">
-                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                </div>
             </div>
         </section>
 
@@ -370,6 +323,7 @@
     </main>
 
     <script>
+        /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
         const canvas = document.getElementById('networkCanvas');
         const ctx = canvas.getContext('2d');
         let width, height, nodes = [];
@@ -427,6 +381,7 @@
                 ctx.lineWidth = n.lineWidth;
                 ctx.stroke();
             }
+
             requestAnimationFrame(animateNetwork);
         }
 
@@ -434,136 +389,39 @@
         initNetwork();
         animateNetwork();
 
-        class ReelSoundEngine {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-            }
-
-            unlock() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioCtx();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            }
-
-            toggle() {
-                this.unlock();
-                this.enabled = !this.enabled;
-                return this.enabled;
-            }
-
-            playSlide() {
-                if (!this.enabled) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(190, now);
-                osc.frequency.exponentialRampToValueAtTime(520, now + 0.24);
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.14, now + 0.06);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.27);
-            }
-
-            playScan() {
-                if (!this.enabled) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(680, now);
-                osc.frequency.exponentialRampToValueAtTime(1450, now + 0.35);
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.09, now + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.4);
-            }
-
-            playPopup() {
-                if (!this.enabled) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(420, now);
-                osc.frequency.exponentialRampToValueAtTime(920, now + 0.11);
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.16, now + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.14);
-            }
-
-            playKaraokeTick(wordIndex = 0) {
-                if (!this.enabled) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                const pitch = 780 + (wordIndex % 4) * 55;
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(pitch, now);
-                osc.frequency.exponentialRampToValueAtTime(pitch * 0.65, now + 0.045);
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.075, now + 0.008);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.055);
-            }
-        }
-
-        const soundEngine = new ReelSoundEngine();
-
-        const reelSlides = [
+        /* ২. স্লাইড ও কারাওকে ক্যাপশন ডেটা (সাউন্ড ছাড়া) */
+        const slides = [
             {
-                badge: "NODE SCAN • 01",
+                badge: "SCENE 01 • SLIDE & SCAN",
                 icon: "🔗",
-                title: "স্মার্ট নেটওয়ার্ক কানেকশন",
+                title: "স্মার্ট নেটওয়ার্ক আর্কিটেকচার",
                 duration: 4400,
                 words: [
-                    { text: "প্রতিটি", start: 0.05, end: 0.18 },
-                    { text: "ডেটা", start: 0.18, end: 0.32 },
-                    { text: "নোড", start: 0.32, end: 0.46 },
-                    { text: "এখন", start: 0.46, end: 0.60 },
-                    { text: "রিয়েল-টাইমে", start: 0.60, end: 0.80 },
-                    { text: "যুক্ত", start: 0.80, end: 0.96 }
+                    { text: "প্রতিটি", start: 0.05, end: 0.19 },
+                    { text: "নেটওয়ার্ক", start: 0.19, end: 0.36 },
+                    { text: "নোড", start: 0.36, end: 0.50 },
+                    { text: "স্বচ্ছভাবে", start: 0.50, end: 0.70 },
+                    { text: "যুক্ত", start: 0.70, end: 0.84 },
+                    { text: "থাকে", start: 0.84, end: 0.97 }
                 ]
             },
             {
-                badge: "AI SYNC • 02",
+                badge: "SCENE 02 • POP-UP & KARAOKE",
                 icon: "⚡",
-                title: "ভয়েস-সিঙ্কড অটোমেশন",
+                title: "হলুদ হাইলাইট কারাওকে অ্যানিমেশন",
                 duration: 4600,
                 words: [
-                    { text: "দ্রুত", start: 0.05, end: 0.20 },
+                    { text: "স্লাইড,", start: 0.05, end: 0.20 },
                     { text: "স্ক্যান", start: 0.20, end: 0.36 },
-                    { text: "এবং", start: 0.36, end: 0.50 },
-                    { text: "নিখুঁত", start: 0.50, end: 0.68 },
-                    { text: "অডিও", start: 0.68, end: 0.82 },
-                    { text: "সিঙ্কিং", start: 0.82, end: 0.97 }
+                    { text: "ও", start: 0.36, end: 0.46 },
+                    { text: "পপ-আপের", start: 0.46, end: 0.66 },
+                    { text: "সাথে", start: 0.66, end: 0.80 },
+                    { text: "কারাওকে", start: 0.80, end: 0.97 }
                 ]
             }
         ];
 
-        const reelStage = document.getElementById('reelStage');
+        const stage169 = document.getElementById('stage169');
         const progressBarsEl = document.getElementById('progressBars');
         const slideCard = document.getElementById('slideCard');
         const popupChip = document.getElementById('popupChip');
@@ -573,20 +431,15 @@
         const scanLine = document.getElementById('scanLine');
         const statusText = document.getElementById('statusText');
         const touchFeedback = document.getElementById('touchFeedback');
-        const soundToggleBtn = document.getElementById('soundToggleBtn');
-        const soundIcon = document.getElementById('soundIcon');
-        const soundLabel = document.getElementById('soundLabel');
-        const waveBars = document.querySelectorAll('#voiceWave span');
 
         let currentSlideIndex = 0;
         let isPlaying = true;
         let elapsedInSlide = 0;
         let lastTimestamp = null;
-        let lastSpokenWordIndex = -1;
         let popupTimeout = null;
         let feedbackTimeout = null;
 
-        reelSlides.forEach(() => {
+        slides.forEach(() => {
             const track = document.createElement('div');
             track.className = 'progress-track';
             const fill = document.createElement('div');
@@ -599,8 +452,7 @@
         function loadSlide(index) {
             currentSlideIndex = index;
             elapsedInSlide = 0;
-            lastSpokenWordIndex = -1;
-            const slide = reelSlides[index];
+            const slide = slides[index];
 
             slideCard.classList.remove('active');
             popupChip.classList.remove('pop');
@@ -613,38 +465,24 @@
             slideTitle.textContent = slide.title;
 
             karaokeCaption.innerHTML = '';
-            slide.words.forEach((w, idx) => {
+            slide.words.forEach((w) => {
                 const span = document.createElement('span');
                 span.className = 'k-word';
                 span.textContent = w.text;
-                span.dataset.idx = idx;
                 karaokeCaption.appendChild(span);
             });
 
             slideCard.classList.add('active');
             scanLine.classList.add('scanning');
-            soundEngine.playSlide();
-            setTimeout(() => soundEngine.playScan(), 120);
 
             clearTimeout(popupTimeout);
             popupTimeout = setTimeout(() => {
                 popupChip.classList.add('pop');
                 visualIcon.classList.add('pop');
-                soundEngine.playPopup();
-            }, 260);
+            }, 240);
 
             progressFills.forEach((fill, i) => {
                 fill.style.width = i < index ? '100%' : '0%';
-            });
-        }
-
-        function updateWave(active) {
-            waveBars.forEach((bar) => {
-                if (active && isPlaying) {
-                    bar.style.height = `${Math.floor(Math.random() * 18 + 5)}px`;
-                } else {
-                    bar.style.height = '5px';
-                }
             });
         }
 
@@ -654,18 +492,15 @@
             lastTimestamp = timestamp;
 
             if (isPlaying) {
-                const slide = reelSlides[currentSlideIndex];
+                const slide = slides[currentSlideIndex];
                 elapsedInSlide += delta;
                 const progress = Math.min(elapsedInSlide / slide.duration, 1);
 
                 progressFills[currentSlideIndex].style.width = `${progress * 100}%`;
 
                 const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                let activeIdx = -1;
-
                 slide.words.forEach((w, idx) => {
                     if (progress >= w.start && progress <= w.end) {
-                        activeIdx = idx;
                         wordEls[idx].classList.add('active');
                         wordEls[idx].classList.remove('spoken');
                     } else if (progress > w.end) {
@@ -676,45 +511,27 @@
                     }
                 });
 
-                if (activeIdx !== -1 && activeIdx !== lastSpokenWordIndex) {
-                    lastSpokenWordIndex = activeIdx;
-                    soundEngine.playKaraokeTick(activeIdx);
-                }
-
-                updateWave(activeIdx !== -1);
-
                 if (progress >= 1) {
-                    const nextIndex = (currentSlideIndex + 1) % reelSlides.length;
+                    const nextIndex = (currentSlideIndex + 1) % slides.length;
                     loadSlide(nextIndex);
                 }
-            } else {
-                updateWave(false);
             }
 
             requestAnimationFrame(tick);
         }
 
-        reelStage.addEventListener('click', (e) => {
-            if (e.target.closest('#soundToggleBtn')) return;
-            soundEngine.unlock();
+        /* স্ক্রিন টাচ / ক্লিক প্লে-পজ অটো-টগল */
+        stage169.addEventListener('click', () => {
             isPlaying = !isPlaying;
-            reelStage.classList.toggle('paused', !isPlaying);
+            stage169.classList.toggle('paused', !isPlaying);
             statusText.textContent = isPlaying ? 'PLAYING' : 'PAUSED';
+
             touchFeedback.textContent = isPlaying ? '▶' : '⏸';
             touchFeedback.classList.add('show');
             clearTimeout(feedbackTimeout);
             feedbackTimeout = setTimeout(() => {
                 touchFeedback.classList.remove('show');
-            }, 550);
-        });
-
-        soundToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isSoundOn = soundEngine.toggle();
-            soundToggleBtn.classList.toggle('muted', !isSoundOn);
-            soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
-            soundLabel.textContent = isSoundOn ? 'Sound ON' : 'Sound OFF';
-            if (isSoundOn) soundEngine.playPopup();
+            }, 500);
         });
 
         loadSlide(0);
