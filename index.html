@@ -34,14 +34,14 @@
       background-color: #111318;
     }
 
-    /* পজ অবস্থায় সব CSS অ্যানিমেশন থামানো */
+    /* পজ অবস্থায় সব CSS অ্যানিমেশন থামানো */
     body.is-paused .n8n-dots-bg,
     body.is-paused .typing-cursor,
     body.is-paused .icon-wrap svg {
       animation-play-state: paused !important;
     }
 
-    /* সিন অনুযায়ী কন্টিনিউয়াস রঙ পরিবর্তনের লেয়ার */
+    /* সিন অনুযায়ী কন্টিনিউয়াস রঙ পরিবর্তনের লেয়ার */
     .scene-ambient-bg {
       position: fixed;
       inset: 0;
@@ -105,7 +105,7 @@
       gap: 10px;
     }
 
-    /* ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল পিল */
+    /* ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল পিল */
     .top-pill {
       display: inline-flex;
       align-items: center;
@@ -141,7 +141,7 @@
       padding-bottom: 7px;
     }
 
-    /* টাইটেলের শেষের দুটি ওয়ার্ডে 0.32s ডিলের পর 0.6s জুড়ে #ffd24c হাইলাইট */
+    /* টাইটেলের শেষের দুটি ওয়ার্ডে 0.32s ডিলের পর 0.6s জুড়ে #ffd24c হাইলাইট */
     .title-highlight-words {
       position: relative;
       z-index: 1;
@@ -479,7 +479,7 @@
       height: 21px;
     }
 
-    /* সব সিন শেষ না হওয়া পর্যন্ত প্রতিটি আইকনের কন্টিনিউয়াস অ্যানিমেশন */
+    /* সব সিন শেষ না হওয়া পর্যন্ত প্রতিটি আইকনের কন্টিনিউয়াস অ্যানিমেশন */
     .ic-orange svg {
       animation: iconFormPulse 2.4s ease-in-out infinite;
     }
@@ -726,7 +726,7 @@
 
   <div class="stage-9x16">
     <div class="top-stack">
-      <!-- ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল + শেষের দুই ওয়ার্ডে #ffd24c হাইলাইট -->
+      <!-- ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল + শেষের দুই ওয়ার্ডে #ffd24c হাইলাইট -->
       <div class="top-pill show-title" id="topTitlePill">
         <span class="live-dot"></span>
         <span>n8n AI <span class="title-highlight-words">Lead Automation</span></span>
@@ -924,7 +924,7 @@
       document.getElementById("sub-1")
     ];
 
-    /* সিন পরিবর্তনের (ট্রানজিশনের) সময় whoosh sound */
+    /* সিন পরিবর্তনের (ট্রানজিশনের) সময় whoosh sound */
     const whooshAudio = new Audio("whoosh.mp3.wav");
     whooshAudio.preload = "auto";
     whooshAudio.volume = 0.75;
@@ -966,7 +966,7 @@
         bgColor2: "rgba(64, 201, 255, 0.16)",
         bgPos2: "64% 56%",
         saroarQuery: "লিড ফর্ম সাবমিট হলে কী হবে?",
-        saroarResult: "Webhook সাথে সাথে ওয়ার্কফ্লো ট্রিগার করবে",
+        saroarResult: "Webhook সাথে সাথে ওয়ার্কফ্লো ট্রিগার করবে",
         words: ["ফর্ম", "আসলেই", "অটোমেশন", "শুরু", "হয়।"]
       },
       {
@@ -978,7 +978,7 @@
         bgPos1: "35% 32%",
         bgColor2: "rgba(129, 140, 248, 0.16)",
         bgPos2: "65% 58%",
-        saroarQuery: "কীভাবে সঠিক ক্লায়েন্ট বাছাই হবে?",
+        saroarQuery: "কীভাবে সঠিক ক্লায়েন্ট বাছাই হবে?",
         saroarResult: "Intent Filter আসল লিড আলাদা করবে",
         words: ["ফিল্টার", "সঠিক", "ক্লায়েন্ট", "আলাদা", "করে।"]
       },
@@ -991,7 +991,7 @@
         bgPos1: "42% 35%",
         bgColor2: "rgba(232, 28, 255, 0.17)",
         bgPos2: "62% 55%",
-        saroarQuery: "ক্লায়েন্টকে উত্তর দেবে কে?",
+        saroarQuery: "ক্লায়েন্টকে উত্তর দেবে কে?",
         saroarResult: "AI Agent + Memory স্মার্ট রিপ্লাই তৈরি করবে",
         words: ["AI", "এজেন্ট", "স্মার্ট", "উত্তর", "বানায়।"]
       },
@@ -1004,7 +1004,7 @@
         bgPos1: "38% 34%",
         bgColor2: "rgba(64, 201, 255, 0.15)",
         bgPos2: "66% 56%",
-        saroarQuery: "লিডের তথ্য কোথায় জমা থাকবে?",
+        saroarQuery: "লিডের তথ্য কোথায় জমা থাকবে?",
         saroarResult: "Google Sheets-এ অটোমেটিক নতুন রো যুক্ত হবে",
         words: ["গুগল", "শিটে", "ডেটা", "সেভ", "হয়।"]
       },
@@ -1018,7 +1018,7 @@
         bgColor2: "rgba(232, 28, 255, 0.17)",
         bgPos2: "66% 56%",
         saroarQuery: "n8n AI Lead Automation স্ট্যাটাস?",
-        saroarResult: "১০০% অটোমেটেড লিড ফ্লো এখন সক্রিয়!",
+        saroarResult: "১০০% অটোমেটেড লিড ফ্লো এখন সক্রিয়!",
         words: ["পুরো", "n8n", "ফ্লো", "একদম", "রেডি!"]
       }
     ];
@@ -1185,7 +1185,7 @@
         } else {
           const progress = elapsed / stepObj.duration;
 
-          /* saroar সার্চ বক্সে টাইপিং অ্যানিমেশন (প্রথম ৪০% সময়ে টাইপ শেষ হবে) */
+          /* saroar সার্চ বক্সে টাইপিং অ্যানিমেশন (প্রথম ৪০% সময়ে টাইপ শেষ হবে) */
           const typingProgress = Math.min(1, progress / 0.4);
           const charCount = Math.floor(typingProgress * stepObj.saroarQuery.length);
           saroarQueryText.textContent = stepObj.saroarQuery.slice(0, charCount);
