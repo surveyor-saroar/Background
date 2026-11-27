@@ -1,1750 +1,1245 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ডকুমেন্ট স্ক্যানিং - 10% BG Music & Live Google Drive Logo</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: radial-gradient(circle at 50% 50%, #0d4559 0%, #062430 60%, #031218 100%);
-            min-height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            color: #ffffff;
-        }
-
-        /* নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
-        #networkCanvas {
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* ঠিক মাঝখানে বর্ডার ও ব্যাকগ্রাউন্ড ফিল ছাড়া 16:9 স্টেজ */
-        .stage-16-9 {
-            position: relative;
-            z-index: 10;
-            aspect-ratio: 16 / 9;
-            width: min(94vw, 1280px);
-            max-height: 92vh;
-            border: none;
-            background: transparent;
-            box-shadow: none;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            cursor: pointer;
-        }
-
-        /* উপরের ১০টি সিনের প্রগ্রেস বার ও টাইমার */
-        .stage-header {
-            padding: 12px 20px 4px;
-            z-index: 20;
-        }
-
-        .progress-bars {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 8px;
-        }
-
-        .progress-track {
-            flex: 1;
-            height: 3.5px;
-            background: rgba(255, 255, 255, 0.22);
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: #facc15;
-            transition: width 0.08s linear;
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-        }
-
-        .timer-pill {
-            background: rgba(3, 18, 24, 0.45);
-            color: #e0f2fe;
-            padding: 4px 11px;
-            border-radius: 99px;
-            font-size: 0.74rem;
-            font-weight: 600;
-        }
-
-        /* মাঝখানের স্বচ্ছ সিন এরিয়া */
-        .visual-viewport {
-            flex: 1;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 4px 24px;
-            text-align: center;
-        }
-
-        /* Alternating Shrink-and-Slide Exit (scale 0.65) + Simultaneous Entrance */
-        .scene-layer {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 4px 24px;
-            pointer-events: none;
-            opacity: 0;
-            filter: blur(10px);
-            transition:
-                opacity 0.56s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.56s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
-            will-change: opacity, filter, transform;
-        }
-
-        .scene-layer.enter-from-right {
-            transform: translate3d(190px, 14px, 0) scale(0.76);
-        }
-
-        .scene-layer.enter-from-left {
-            transform: translate3d(-190px, 14px, 0) scale(0.76);
-        }
-
-        .scene-layer.active {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-            pointer-events: auto;
-        }
-
-        .scene-layer.exiting-left {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(-195px, -10px, 0) scale(0.65);
-        }
-
-        .scene-layer.exiting-right {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(195px, -10px, 0) scale(0.65);
-        }
-
-        .scene-inner {
-            width: 100%;
-            max-width: 1040px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* উপরের তিনটি লেখা আরও ০.৫ ইঞ্চি (~48px) উপরে */
-        .top-texts-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 7px;
-            transform: translateY(-48px);
-            margin-bottom: -36px;
-        }
-
-        .scene-badge {
-            display: inline-block;
-            background: #facc15;
-            color: #061820;
-            font-size: 0.74rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            padding: 4px 14px;
-            border-radius: 99px;
-            opacity: 0;
-            filter: blur(6px);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
-        }
-
-        .enter-from-right .scene-badge { transform: translate3d(55px, 8px, 0) scale(0.8); }
-        .enter-from-left .scene-badge { transform: translate3d(-55px, 8px, 0) scale(0.8); }
-
-        .scene-layer.active .scene-badge {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        .scene-layer.exiting-left .scene-badge {
-            opacity: 0;
-            filter: blur(6px);
-            transform: translate3d(-110px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .scene-layer.exiting-right .scene-badge {
-            opacity: 0;
-            filter: blur(6px);
-            transform: translate3d(110px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .scene-heading {
-            font-size: clamp(1.25rem, 2.3vw, 1.9rem);
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
-            line-height: 1.3;
-            opacity: 0;
-            filter: blur(8px);
-            transition: all 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
-        }
-
-        .enter-from-right .scene-heading { transform: translate3d(70px, 10px, 0) scale(0.86); }
-        .enter-from-left .scene-heading { transform: translate3d(-70px, 10px, 0) scale(0.86); }
-
-        .scene-layer.active .scene-heading {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        .scene-layer.exiting-left .scene-heading {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(-130px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .scene-layer.exiting-right .scene-heading {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(130px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .accent-highlight {
-            position: relative;
-            display: inline-block;
-            color: #061820;
-            text-shadow: none;
-            padding: 1px 8px;
-            z-index: 1;
-        }
-
-        .accent-highlight::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
-            background: #facc15;
-            border-radius: 6px;
-            z-index: -1;
-            transform: scaleX(0);
-            transform-origin: left center;
-            transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.22s;
-        }
-
-        .scene-layer.active .accent-highlight::before {
-            transform: scaleX(1);
-        }
-
-        .scene-subtext {
-            font-size: clamp(0.85rem, 1.25vw, 1.02rem);
-            color: rgba(240, 249, 255, 0.88);
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
-            max-width: 740px;
-            opacity: 0;
-            filter: blur(6px);
-            transition: all 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.14s;
-        }
-
-        .enter-from-right .scene-subtext { transform: translate3d(60px, 10px, 0) scale(0.88); }
-        .enter-from-left .scene-subtext { transform: translate3d(-60px, 10px, 0) scale(0.88); }
-
-        .scene-layer.active .scene-subtext {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        .scene-layer.exiting-left .scene-subtext {
-            opacity: 0;
-            filter: blur(6px);
-            transform: translate3d(-115px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .scene-layer.exiting-right .scene-subtext {
-            opacity: 0;
-            filter: blur(6px);
-            transform: translate3d(115px, 0, 0) scale(0.65);
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        /* একদম বাম পাশে ছবির বক্স (শুধুমাত্র শেষ সিনে দেখানো হবে) */
-        .content-row {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 14px;
-            align-items: stretch;
-            margin-top: 6px;
-        }
-
-        .content-row.has-left-photo {
-            grid-template-columns: 175px 1fr;
-        }
-
-        .left-photo-box {
-            background: rgba(6, 36, 48, 0.5);
-            border: 1.5px solid rgba(250, 204, 21, 0.45);
-            border-radius: 16px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .rounded-photo-frame {
-            width: 126px;
-            height: 126px;
-            border-radius: 26px;
-            padding: 3px;
-            background: linear-gradient(135deg, #facc15, rgba(250, 204, 21, 0.25));
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .rounded-photo-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 23px;
-            display: block;
-            background: #072a38;
-        }
-
-        /* ভিন্ন সাইজের কার্ড গ্রিড */
-        .cards-grid {
-            position: relative;
-            width: 100%;
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 12px;
-            align-items: stretch;
-        }
-
-        .info-card {
-            position: relative;
-            background: rgba(6, 36, 48, 0.44);
-            border: 1px solid rgba(250, 204, 21, 0.3);
-            border-radius: 16px;
-            padding: 14px 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            grid-column: span var(--span, 4);
-            opacity: 0;
-            filter: blur(8px);
-            transition:
-                opacity 0.54s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.54s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.56s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .enter-from-right .info-card {
-            transform: translate3d(125px, 16px, 0) scale(0.78);
-        }
-
-        .enter-from-left .info-card {
-            transform: translate3d(-125px, 16px, 0) scale(0.78);
-        }
-
-        .info-card.size-lg {
-            background: rgba(10, 54, 72, 0.54);
-            border-color: rgba(250, 204, 21, 0.55);
-            padding: 18px 16px;
-        }
-
-        .info-card.size-sm {
-            padding: 11px 8px;
-        }
-
-        .info-card:nth-child(1) { transition-delay: 0.1s; }
-        .info-card:nth-child(2) { transition-delay: 0.16s; }
-        .info-card:nth-child(3) { transition-delay: 0.22s; }
-        .info-card:nth-child(4) { transition-delay: 0.28s; }
-
-        .scene-layer.active .info-card {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        .scene-layer.exiting-left .info-card {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(-165px, -8px, 0) scale(0.65);
-            transition:
-                opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .scene-layer.exiting-right .info-card {
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(165px, -8px, 0) scale(0.65);
-            transition:
-                opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        /* শেষ সিনে মাউস পয়েন্টার: প্রথমে রিং বেলে ক্লিক, তারপর শেয়ার অপশনে ক্লিক, শেষে ক্লিয়ার */
-        .pointer-cursor {
-            position: absolute;
-            left: 52%;
-            top: 42%;
-            width: 34px;
-            height: 34px;
-            z-index: 35;
-            pointer-events: none;
-            opacity: 0;
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.65));
-        }
-
-        .scene-layer.active .pointer-cursor {
-            animation: dualClickPointer 3.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
-        }
-
-        .stage-16-9.paused .scene-layer.active .pointer-cursor {
-            animation-play-state: paused;
-        }
-
-        @keyframes dualClickPointer {
-            0% {
-                opacity: 0;
-                transform: translate3d(90px, -18px, 0) scale(1);
-            }
-            16% {
-                opacity: 1;
-                transform: translate3d(0px, 0px, 0) scale(1);
-            }
-            23% {
-                opacity: 1;
-                transform: translate3d(0px, 0px, 0) scale(0.82);
-            }
-            29% {
-                opacity: 1;
-                transform: translate3d(0px, 0px, 0) scale(1);
-            }
-            52% {
-                opacity: 1;
-                transform: translate3d(245px, 6px, 0) scale(1);
-            }
-            59% {
-                opacity: 1;
-                transform: translate3d(245px, 6px, 0) scale(0.82);
-            }
-            65% {
-                opacity: 1;
-                transform: translate3d(245px, 6px, 0) scale(1);
-            }
-            86% {
-                opacity: 0.55;
-                transform: translate3d(315px, -24px, 0) scale(0.95);
-            }
-            100% {
-                opacity: 0;
-                transform: translate3d(350px, -38px, 0) scale(0.85);
-            }
-        }
-
-        .click-ripple {
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 3px solid #facc15;
-            transform: translate(-50%, -50%) scale(0.2);
-            opacity: 0;
-            pointer-events: none;
-            z-index: 25;
-        }
-
-        .ripple-bell {
-            left: 50%;
-            top: 38%;
-        }
-
-        .scene-layer.active .ripple-bell {
-            animation: ripplePulse 0.65s ease-out 1.15s forwards;
-        }
-
-        .ripple-share {
-            left: 50%;
-            top: 38%;
-            border-color: #4ade80;
-        }
-
-        .scene-layer.active .ripple-share {
-            animation: ripplePulse 0.65s ease-out 2.35s forwards;
-        }
-
-        .stage-16-9.paused .scene-layer.active .click-ripple {
-            animation-play-state: paused;
-        }
-
-        @keyframes ripplePulse {
-            0% {
-                opacity: 0.95;
-                transform: translate(-50%, -50%) scale(0.25);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(2.6);
-            }
-        }
-
-        /* রিং বেল থেকে পরিবর্তন হয়ে ফলো বাটন ভেসে ওঠা */
-        .bell-state-wrapper {
-            position: relative;
-            width: 100%;
-            min-height: 96px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .bell-before-click {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            transition: opacity 0.25s ease, transform 0.3s ease;
-        }
-
-        .bell-before-click.clicked-hide {
-            opacity: 0;
-            transform: scale(0.7);
-            pointer-events: none;
-            position: absolute;
-        }
-
-        .follow-pill-pop {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: #facc15;
-            color: #061820;
-            font-weight: 800;
-            font-size: 1.05rem;
-            padding: 12px 24px;
-            border-radius: 999px;
-            box-shadow: 0 8px 24px rgba(250, 204, 21, 0.35);
-            opacity: 0;
-            transform: scale(0.55) translateY(10px);
-            transition: opacity 0.32s ease, transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .follow-pill-pop.visible {
-            display: inline-flex;
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-
-        /* শেয়ার কার্ড ক্লিক হলে নিচের লেখা সবুজ কালারে পরিবর্তন */
-        .share-target-card.share-clicked {
-            border-color: rgba(74, 222, 128, 0.75);
-            background: rgba(12, 64, 52, 0.55);
-            transition: background 0.3s ease, border-color 0.3s ease;
-        }
-
-        .share-desc-text {
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.86);
-            line-height: 1.35;
-            transition: color 0.3s ease, transform 0.3s ease, font-weight 0.3s ease;
-        }
-
-        .share-desc-text.green-active {
-            color: #4ade80;
-            font-weight: 700;
-            transform: scale(1.06);
-        }
-
-        /* বড় লাইভ অ্যানিমেটেড আইকন কন্টেইনার */
-        .live-icon-wrap {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
-            background: rgba(250, 204, 21, 0.14);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #facc15;
-            position: relative;
-        }
-
-        .live-icon-wrap.drive-logo-wrap {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1.5px solid rgba(251, 188, 4, 0.35);
-        }
-
-        .info-card.size-lg .live-icon-wrap {
-            width: 92px;
-            height: 92px;
-            border-radius: 22px;
-            background: rgba(250, 204, 21, 0.2);
-        }
-
-        .info-card.size-lg .live-icon-wrap.drive-logo-wrap {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1.5px solid rgba(66, 133, 244, 0.45);
-        }
-
-        .info-card.size-sm .live-icon-wrap {
-            width: 58px;
-            height: 58px;
-            border-radius: 15px;
-        }
-
-        .live-svg {
-            width: 46px;
-            height: 46px;
-            overflow: visible;
-        }
-
-        .info-card.size-lg .live-svg {
-            width: 60px;
-            height: 60px;
-        }
-
-        .info-card.size-sm .live-svg {
-            width: 36px;
-            height: 36px;
-        }
-
-        @keyframes iconFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-        }
-
-        @keyframes iconSpinSlow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes iconPulseScale {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.13); }
-        }
-
-        @keyframes scanBeamMove {
-            0%, 100% { transform: translateY(-9px); opacity: 0.95; }
-            50% { transform: translateY(10px); opacity: 0.45; }
-        }
-
-        @keyframes plusPulse {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.16) rotate(90deg); }
-        }
-
-        @keyframes cropExpand {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.09); }
-        }
-
-        @keyframes checkDraw {
-            0% { stroke-dashoffset: 36; }
-            50%, 100% { stroke-dashoffset: 0; }
-        }
-
-        /* Google Drive লাইভ লোগো অ্যানিমেশন */
-        @keyframes driveLivePulse {
-            0%, 100% {
-                transform: scale(1) translateY(0px);
-                filter: drop-shadow(0 0 6px rgba(66, 133, 244, 0.4));
-            }
-            50% {
-                transform: scale(1.1) translateY(-2px);
-                filter: drop-shadow(0 0 14px rgba(52, 168, 83, 0.55));
-            }
-        }
-
-        @keyframes driveLegYellow {
-            0%, 100% { transform: translate(0, 0); opacity: 1; }
-            50% { transform: translate(1.8px, -1.5px); opacity: 0.92; }
-        }
-
-        @keyframes driveLegGreen {
-            0%, 100% { transform: translate(0, 0); opacity: 1; }
-            50% { transform: translate(-1.8px, 1.2px); opacity: 0.92; }
-        }
-
-        @keyframes driveLegBlue {
-            0%, 100% { transform: translate(0, 0); opacity: 1; }
-            50% { transform: translate(0, 1.8px); opacity: 0.92; }
-        }
-
-        .anim-float { animation: iconFloat 2.1s ease-in-out infinite; }
-        .anim-spin { transform-origin: center; animation: iconSpinSlow 6s linear infinite; }
-        .anim-pulse { transform-origin: center; animation: iconPulseScale 1.8s ease-in-out infinite; }
-        .anim-scan-beam { animation: scanBeamMove 1.6s ease-in-out infinite; }
-        .anim-plus { transform-origin: center; animation: plusPulse 2.2s ease-in-out infinite; }
-        .anim-crop { transform-origin: center; animation: cropExpand 2s ease-in-out infinite; }
-        .anim-check { stroke-dasharray: 36; stroke-dashoffset: 0; animation: checkDraw 2.2s ease-in-out infinite; }
-        .anim-drive-live { transform-origin: center; animation: driveLivePulse 2s ease-in-out infinite; }
-        .anim-drive-yellow { animation: driveLegYellow 2s ease-in-out infinite; }
-        .anim-drive-green { animation: driveLegGreen 2s ease-in-out infinite; }
-        .anim-drive-blue { animation: driveLegBlue 2s ease-in-out infinite; }
-
-        .stage-16-9.paused .anim-float,
-        .stage-16-9.paused .anim-spin,
-        .stage-16-9.paused .anim-pulse,
-        .stage-16-9.paused .anim-scan-beam,
-        .stage-16-9.paused .anim-plus,
-        .stage-16-9.paused .anim-crop,
-        .stage-16-9.paused .anim-check,
-        .stage-16-9.paused .anim-drive-live,
-        .stage-16-9.paused .anim-drive-yellow,
-        .stage-16-9.paused .anim-drive-green,
-        .stage-16-9.paused .anim-drive-blue {
-            animation-play-state: paused;
-        }
-
-        .card-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #fef08a;
-        }
-
-        .info-card.size-lg .card-title { font-size: 1.08rem; }
-        .info-card.size-sm .card-title { font-size: 0.84rem; }
-
-        .card-desc {
-            font-size: 0.78rem;
-            color: rgba(255, 255, 255, 0.86);
-            line-height: 1.35;
-        }
-
-        .info-card.size-lg .card-desc { font-size: 0.86rem; }
-        .info-card.size-sm .card-desc { font-size: 0.72rem; }
-
-        /* ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স */
-        .karaoke-box {
-            margin: 0 24px 14px;
-            padding: 10px 18px;
-            border-radius: 12px;
-            background: rgba(3, 18, 24, 0.42);
-            text-align: center;
-            z-index: 15;
-            opacity: 0;
-            filter: blur(8px);
-            transform: translate3d(0, 16px, 0) scale(0.95);
-            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.32s;
-        }
-
-        .stage-16-9.ready .karaoke-box {
-            opacity: 1;
-            filter: blur(0px);
-            transform: translate3d(0, 0, 0) scale(1);
-        }
-
-        .karaoke-caption {
-            font-size: clamp(1.05rem, 1.95vw, 1.62rem);
-            font-weight: 700;
-            line-height: 1.5;
-            min-height: 2.6rem;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-content: center;
-            gap: 5px 7px;
-        }
-
-        .k-word {
-            position: relative;
-            color: rgba(255, 255, 255, 0.62);
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
-            padding: 2px 7px;
-            border-radius: 6px;
-            background: transparent;
-            z-index: 1;
-            transition: color 0.12s ease, transform 0.16s ease;
-            display: inline-block;
-        }
-
-        .k-word::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #facc15;
-            border-radius: 6px;
-            z-index: -1;
-            transform: scaleX(0);
-            transform-origin: left center;
-            transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .k-word.spoken { color: #ffffff; }
-
-        .k-word.spoken::after {
-            transform: scaleX(1);
-            height: 4px;
-            top: auto;
-            bottom: 0;
-            border-radius: 99px;
-        }
-
-        .k-word.active {
-            color: #061820;
-            text-shadow: none;
-            transform: scale(1.08) translateY(-2px);
-        }
-
-        .k-word.active::after {
-            transform: scaleX(1);
-            height: 100%;
-            border-radius: 6px;
-        }
-
-        .typing-caret {
-            display: inline-block;
-            width: 3px;
-            height: 1.15em;
-            background-color: #facc15;
-            margin-left: 3px;
-            vertical-align: middle;
-            border-radius: 2px;
-            animation: caretBlink 0.7s infinite;
-        }
-
-        @keyframes caretBlink {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0.15; }
-        }
-
-        .touch-feedback {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.6);
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            background: rgba(3, 18, 24, 0.72);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.7rem;
-            color: #facc15;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 40;
-            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .touch-feedback.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>n8n Style Workflow Reel • 9:16 Auto Camera & saroar Accent</title>
+  <style>
+    :root {
+      --glow1-color: rgba(64, 201, 255, 0.16);
+      --glow1-pos: 24% 24%;
+      --glow2-color: rgba(232, 28, 255, 0.16);
+      --glow2-pos: 66% 58%;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f8fafc;
+      background-color: #111318;
+    }
+
+    /* পজ অবস্থায় সব CSS অ্যানিমেশন থামানো */
+    body.is-paused .n8n-dots-bg,
+    body.is-paused .typing-cursor,
+    body.is-paused .icon-wrap svg {
+      animation-play-state: paused !important;
+    }
+
+    /* সিন অনুযায়ী কন্টিনিউয়াস রঙ পরিবর্তনের লেয়ার */
+    .scene-ambient-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at var(--glow1-pos), var(--glow1-color), transparent 46%),
+        radial-gradient(circle at var(--glow2-pos), var(--glow2-color), transparent 50%),
+        #111318;
+      transition: background 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* n8n-স্টাইল সূক্ষ্ম ডটেড ক্যানভাস ব্যাকগ্রাউন্ড + কেন্দ্র থেকে হালকা জুম-আনজুম */
+    .n8n-dots-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(148, 163, 184, 0.24) 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+      mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.96) 50%, rgba(0, 0, 0, 0.28) 100%);
+      transform-origin: center center;
+      animation: subtleDotsZoom 12s ease-in-out infinite alternate;
+      will-change: transform, opacity;
+    }
+
+    @keyframes subtleDotsZoom {
+      0% {
+        transform: scale(1);
+        opacity: 0.85;
+      }
+      100% {
+        transform: scale(1.035);
+        opacity: 1;
+      }
+    }
+
+    /* ৯:১৬ ভার্টিক্যাল কন্টেন্ট ফ্রেম */
+    .stage-9x16 {
+      position: relative;
+      z-index: 10;
+      width: min(96vw, calc(96vh * 9 / 16));
+      height: min(94vh, calc(96vw * 16 / 9));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 14px 36px;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    /* উপরের হেডার ও saroar সার্চ কার্ড র‍্যাপার */
+    .top-stack {
+      position: relative;
+      z-index: 24;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল পিল */
+    .top-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #e2e8f0;
+      background: rgba(24, 27, 35, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      padding: 7px 14px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(-10px) scale(0.92);
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+      transition:
+        opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        max-height 0.4s ease,
+        padding 0.4s ease;
+    }
+
+    .top-pill.show-title {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      max-height: 44px;
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+
+    /* টাইটেলের শেষের দুটি ওয়ার্ডে 0.32s ডিলের পর 0.6s জুড়ে #ffd24c হাইলাইট */
+    .title-highlight-words {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      padding: 2px 7px;
+      margin-left: 3px;
+      color: #e2e8f0;
+      transition: color 0.35s ease 0.42s;
+    }
+
+    .title-highlight-words::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: #ffd24c;
+      border-radius: 6px;
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: none;
+    }
+
+    .top-pill.show-title .title-highlight-words {
+      color: #090d16;
+    }
+
+    .top-pill.show-title .title-highlight-words::before {
+      transform: scaleX(1);
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.32s;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+      flex-shrink: 0;
+    }
+
+    /* saroar ব্যাজসহ সার্চ বক্স ও রেজাল্ট পপ-আপ */
+    .saroar-widget {
+      width: 94%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .saroar-search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(18, 21, 29, 0.92);
+      border: 1px solid rgba(64, 201, 255, 0.35);
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+    }
+
+    .saroar-badge {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      color: #090d16;
+      background: linear-gradient(90deg, #40C9FF, #38bdf8);
+      padding: 2px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .saroar-typing-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: #facc15;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: cursorBlink 0.65s steps(1) infinite;
+    }
+
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .saroar-result-popup {
+      background: rgba(24, 28, 38, 0.96);
+      border: 1px solid rgba(250, 204, 21, 0.45);
+      border-left: 3px solid #facc15;
+      border-radius: 10px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      transform: translateY(-6px) scale(0.96);
+      transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .saroar-result-popup.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .saroar-result-tag {
+      color: #facc15;
+      font-weight: 800;
+      margin-right: 4px;
+    }
+
+    /* ক্যামেরা ভিউপোর্ট ও ক্যানভাস রিগ */
+    .camera-viewport {
+      position: relative;
+      z-index: 12;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .n8n-canvas {
+      position: relative;
+      z-index: 14;
+      width: 920px;
+      height: 440px;
+      flex-shrink: 0;
+      transform-origin: center center;
+      transform: translate(0px, 0px) scale(0.45);
+      transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    /* SVG তার ও পালস লেয়ার */
+    .wires-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .n8n-wire {
+      fill: none;
+      stroke: #475569;
+      stroke-width: 3;
+      stroke-linecap: round;
+      transition: stroke 0.35s ease, stroke-width 0.35s ease;
+    }
+
+    .n8n-wire.sub-wire {
+      stroke-dasharray: 6 6;
+      stroke-width: 2.4;
+      stroke: #64748b;
+    }
+
+    .n8n-wire.active-wire {
+      stroke: url(#n8nGrad);
+      stroke-width: 4;
+    }
+
+    .wire-pulse {
+      r: 6;
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+
+    /* আসল n8n নোড ডিজাইন */
+    .n8n-node {
+      position: absolute;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.35s ease;
+    }
+
+    .node-box {
+      position: relative;
+      width: 104px;
+      height: 104px;
+      border-radius: 24px;
+      background: #1e212b;
+      border: 2px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+      transition: border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease, transform 0.35s ease;
+    }
+
+    .n8n-node.agent-node .node-box {
+      width: 230px;
+      height: 104px;
+      padding: 0 18px;
+      justify-content: flex-start;
+      gap: 14px;
+    }
+
+    .n8n-node.sub-node .node-box {
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      background: #191c24;
+    }
+
+    .n8n-node.active .node-box {
+      background: #232734;
+      border-color: #40C9FF;
+      box-shadow:
+        0 0 0 4px rgba(64, 201, 255, 0.18),
+        0 0 28px rgba(232, 28, 255, 0.28),
+        0 16px 34px rgba(0, 0, 0, 0.65);
+      transform: scale(1.05);
+    }
+
+    .n8n-node.done .node-box {
+      border-color: #22c55e;
+    }
+
+    .port {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #94a3b8;
+      border: 2.5px solid #111318;
+      z-index: 5;
+    }
+
+    .port.in {
+      left: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .port.out {
+      right: -7px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .port.bottom-1 {
+      bottom: -7px;
+      left: 34%;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 2px;
+    }
+
+    .port.bottom-2 {
+      bottom: -7px;
+      left: 66%;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 2px;
+    }
+
+    .port.top {
+      top: -7px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 2px;
+    }
+
+    .n8n-node.active .port,
+    .n8n-node.done .port {
+      background: #22c55e;
+    }
+
+    .node-check {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: #22c55e;
+      color: #052e16;
+      font-size: 15px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.5);
+      opacity: 0;
+      transform: scale(0.4);
+      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .n8n-node.active .node-check,
+    .n8n-node.done .node-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sub-node .icon-wrap {
+      width: 36px;
+      height: 36px;
+    }
+
+    .icon-wrap svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .sub-node .icon-wrap svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    /* সব সিন শেষ না হওয়া পর্যন্ত প্রতিটি আইকনের কন্টিনিউয়াস অ্যানিমেশন */
+    .ic-orange svg {
+      animation: iconFormPulse 2.4s ease-in-out infinite;
+    }
+
+    .ic-blue svg {
+      animation: iconFilterSwing 2.6s ease-in-out infinite;
+    }
+
+    .ic-purple svg {
+      animation: iconAgentFloat 2.2s ease-in-out infinite;
+    }
+
+    .ic-cyan svg {
+      animation: iconChatSpin 5s linear infinite;
+    }
+
+    .sub-node .ic-purple svg {
+      animation: iconMemoryPulse 2.5s ease-in-out infinite;
+    }
+
+    .ic-green svg {
+      animation: iconSheetBeat 2.1s ease-in-out infinite;
+    }
+
+    @keyframes iconFormPulse {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.14) rotate(-3deg); }
+    }
+
+    @keyframes iconFilterSwing {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(-9deg) scale(1.06); }
+      75% { transform: rotate(9deg) scale(1.06); }
+    }
+
+    @keyframes iconAgentFloat {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-3.5px) scale(1.08); }
+    }
+
+    @keyframes iconChatSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes iconMemoryPulse {
+      0%, 100% { transform: scaleY(1) scaleX(1); }
+      50% { transform: scaleY(1.12) scaleX(0.95); }
+    }
+
+    @keyframes iconSheetBeat {
+      0%, 100% { transform: scale(1); }
+      35% { transform: scale(1.13); }
+      70% { transform: scale(0.97); }
+    }
+
+    .ic-orange { background: rgba(249, 115, 22, 0.16); color: #fb923c; }
+    .ic-blue   { background: rgba(56, 189, 248, 0.16); color: #38bdf8; }
+    .ic-purple { background: rgba(192, 132, 252, 0.18); color: #c084fc; }
+    .ic-green  { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
+    .ic-cyan   { background: rgba(64, 201, 255, 0.16); color: #40C9FF; }
+
+    .agent-inner-text {
+      text-align: left;
+    }
+
+    .agent-inner-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .agent-inner-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .node-label {
+      margin-top: 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .node-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #f1f5f9;
+    }
+
+    .node-role {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .sub-node .node-name {
+      font-size: 13px;
+    }
+
+    .sheet-card {
+      margin-top: 10px;
+      width: 215px;
+      background: rgba(22, 25, 34, 0.95);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .sheet-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .sheet-card th,
+    .sheet-card td {
+      padding: 5px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .sheet-card th {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      font-weight: 800;
+    }
+
+    .sheet-card tr.flash-row {
+      background: rgba(34, 197, 94, 0.22);
+      color: #dcfce7;
+      font-weight: 700;
+    }
+
+    /* নিচে সম্পূর্ণ দৃশ্যমান কারাওকে ক্যাপশন + হলুদ হাইলাইট বার অ্যাকসেন্ট */
+    .karaoke-box {
+      position: relative;
+      z-index: 25;
+      width: 100%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      overflow: visible;
+    }
+
+    .karaoke-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 6px 6px;
+      max-width: 100%;
+      font-size: clamp(16px, 2.3vh, 22px);
+      font-weight: 800;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .k-word {
+      position: relative;
+      z-index: 1;
+      color: #ffffff;
+      padding: 4px 9px;
+      border-radius: 7px;
+      background: rgba(11, 13, 19, 0.78);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+      overflow: hidden;
+      transition: color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    /* মূল শব্দের পেছনে/নিচে হলুদ হাইলাইট বার */
+    .k-word::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: #facc15;
+      border-radius: 7px;
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .k-word::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 2px;
+      height: 3px;
+      border-radius: 99px;
+      background: #fde047;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .k-word.active {
+      color: #090d16;
+      text-shadow: none;
+      transform: scale(1.07);
+      box-shadow: 0 4px 16px rgba(250, 204, 21, 0.45);
+    }
+
+    .k-word.active::before {
+      transform: scaleX(1);
+    }
+
+    .k-word.active::after {
+      opacity: 1;
+    }
+
+    .pause-pill {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 30;
+      font-size: 12px;
+      font-weight: 800;
+      color: #090d16;
+      background: linear-gradient(90deg, #40C9FF, #E81CFF);
+      padding: 6px 14px;
+      border-radius: 999px;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+
+    .pause-pill.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
 </head>
 <body>
+  <div class="scene-ambient-bg" id="sceneAmbientBg"></div>
+  <div class="n8n-dots-bg"></div>
+  <div class="pause-pill" id="pausePill">PAUSED • ট্যাপ করে চালান</div>
 
-    <!-- নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস -->
-    <canvas id="networkCanvas"></canvas>
+  <div class="stage-9x16">
+    <div class="top-stack">
+      <!-- ২ সিন পর পর দৃশ্যমান হওয়া টাইটেল + শেষের দুই ওয়ার্ডে #ffd24c হাইলাইট -->
+      <div class="top-pill show-title" id="topTitlePill">
+        <span class="live-dot"></span>
+        <span>n8n AI <span class="title-highlight-words">Lead Automation</span></span>
+      </div>
 
-    <!-- ঠিক মাঝখানে বর্ডার ও ব্যাকগ্রাউন্ড ফিল ছাড়া 16:9 স্টেজ -->
-    <main class="stage-16-9" id="stage169">
-        <div class="touch-feedback" id="touchFeedback">⏸</div>
+      <!-- saroar ব্যাজসহ সার্চ বক্স, টাইপিং কার্সর ও রেজাল্ট পপ-আপ -->
+      <div class="saroar-widget">
+        <div class="saroar-search-bar">
+          <span class="saroar-badge">saroar</span>
+          <div class="saroar-typing-text">
+            <span id="saroarQueryText"></span><span class="typing-cursor"></span>
+          </div>
+        </div>
+        <div class="saroar-result-popup" id="saroarResultPopup">
+          <span class="saroar-result-tag">✓ AI Answer:</span>
+          <span id="saroarResultText"></span>
+        </div>
+      </div>
+    </div>
 
-        <header class="stage-header">
-            <div class="progress-bars" id="progressBars"></div>
-            <div class="status-row">
-                <span class="timer-pill" id="timerPill">00s / 55s</span>
+    <div class="camera-viewport" id="cameraViewport">
+      <div class="n8n-canvas" id="n8nCanvas">
+        <svg class="wires-svg" id="wiresSvg" viewBox="0 0 920 440">
+          <defs>
+            <linearGradient id="n8nGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#40C9FF" />
+              <stop offset="100%" stop-color="#E81CFF" />
+            </linearGradient>
+          </defs>
+          <g id="wiresLayer"></g>
+          <g id="pulsesLayer"></g>
+        </svg>
+
+        <!-- নোড ১ -->
+        <div class="n8n-node active" id="node-0" style="left: 36px; top: 96px;">
+          <div class="node-box">
+            <div class="node-check">✓</div>
+            <div class="icon-wrap ic-orange">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
             </div>
-        </header>
+            <div class="port out"></div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">On Form Submit</div>
+            <div class="node-role">Webhook Trigger</div>
+          </div>
+        </div>
 
-        <!-- Alternating Shrink-and-Slide Exit + Incoming Entrance ভিউপোর্ট -->
-        <section class="visual-viewport" id="visualViewport"></section>
+        <!-- নোড ২ -->
+        <div class="n8n-node" id="node-1" style="left: 230px; top: 96px;">
+          <div class="node-box">
+            <div class="node-check">✓</div>
+            <div class="port in"></div>
+            <div class="icon-wrap ic-blue">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+            </div>
+            <div class="port out"></div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">Intent Filter</div>
+            <div class="node-role">Lead Qualification</div>
+          </div>
+        </div>
 
-        <!-- ১টি নিচের কারাওকে + টাইপিং অ্যাকসেন্ট ক্যাপশন বক্স -->
-        <footer class="karaoke-box" id="karaokeBox">
-            <div class="karaoke-caption" id="karaokeCaption"></div>
-        </footer>
-    </main>
+        <!-- নোড ৩: AI Agent -->
+        <div class="n8n-node agent-node" id="node-2" style="left: 430px; top: 96px;">
+          <div class="node-box">
+            <div class="node-check">✓</div>
+            <div class="port in"></div>
+            <div class="icon-wrap ic-purple">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="15" rx="3"></rect>
+                <circle cx="9" cy="11" r="1.3"></circle>
+                <circle cx="15" cy="11" r="1.3"></circle>
+                <path d="M9 15h6"></path>
+              </svg>
+            </div>
+            <div class="agent-inner-text">
+              <div class="agent-inner-title">AI Agent</div>
+              <div class="agent-inner-sub">Tools Agent • Auto Reply</div>
+            </div>
+            <div class="port out"></div>
+            <div class="port bottom-1"></div>
+            <div class="port bottom-2"></div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">Smart AI Processor</div>
+            <div class="node-role">Context + Memory</div>
+          </div>
+        </div>
 
-    <script>
-        const USER_PHOTO_URL = "saroar01.png";
-        const BG_MUSIC_CANDIDATES = ["music1", "music1.mp3", "music1.wav", "music1.ogg", "music1.m4a"];
-        const BG_MUSIC_VOLUME = 0.10; // ব্যাকগ্রাউন্ড সাউন্ড 10%
-        const EXTRA_HOLD_MS = 5000;
+        <!-- সাব-নোড ৩ক -->
+        <div class="n8n-node sub-node" id="sub-0" style="left: 446px; top: 285px;">
+          <div class="node-box">
+            <div class="port top"></div>
+            <div class="icon-wrap ic-cyan">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8"></circle>
+                <path d="M12 8v8M8 12h8"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">Chat Model</div>
+          </div>
+        </div>
 
-        /* ১. নেটওয়ার্ক নোড ব্যাকগ্রাউন্ড ক্যানভাস */
-        const canvas = document.getElementById('networkCanvas');
-        const ctx = canvas.getContext('2d');
-        let width, height, nodes = [];
+        <!-- সাব-নোড ৩খ -->
+        <div class="n8n-node sub-node" id="sub-1" style="left: 568px; top: 285px;">
+          <div class="node-box">
+            <div class="port top"></div>
+            <div class="icon-wrap ic-purple">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <ellipse cx="12" cy="6" rx="7" ry="3"></ellipse>
+                <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"></path>
+                <path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">Memory</div>
+          </div>
+        </div>
 
-        function initNetwork() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            nodes = [];
-            const count = Math.floor((width * height) / 14500);
+        <!-- নোড ৪: Google Sheets -->
+        <div class="n8n-node" id="node-3" style="left: 715px; top: 96px;">
+          <div class="node-box">
+            <div class="node-check">✓</div>
+            <div class="port in"></div>
+            <div class="icon-wrap ic-green">
+              <svg stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <path d="M3 9h18M3 15h18M9 3v18M15 3v18"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="node-label">
+            <div class="node-name">Google Sheets</div>
+            <div class="node-role">Append Row</div>
+          </div>
+          <div class="sheet-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Intent</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="sheetRows">
+                <tr>
+                  <td>রাকিব</td>
+                  <td>Order</td>
+                  <td style="color:#4ade80;font-weight:800;">Done ✓</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            for (let i = 0; i < count; i++) {
-                const isLarge = Math.random() > 0.72;
-                nodes.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.25,
-                    vy: (Math.random() - 0.5) * 0.25,
-                    radius: isLarge ? (Math.random() * 5 + 7) : (Math.random() * 3 + 3.5),
-                    lineWidth: isLarge ? 2 : 1.4
-                });
-            }
+    <div class="karaoke-box">
+      <div class="karaoke-line" id="karaokeLine"></div>
+    </div>
+  </div>
+
+  <script>
+    const viewport = document.getElementById("cameraViewport");
+    const canvas = document.getElementById("n8nCanvas");
+    const sceneAmbientBg = document.getElementById("sceneAmbientBg");
+    const topTitlePill = document.getElementById("topTitlePill");
+    const saroarQueryText = document.getElementById("saroarQueryText");
+    const saroarResultPopup = document.getElementById("saroarResultPopup");
+    const saroarResultText = document.getElementById("saroarResultText");
+    const wiresLayer = document.getElementById("wiresLayer");
+    const pulsesLayer = document.getElementById("pulsesLayer");
+    const karaokeLine = document.getElementById("karaokeLine");
+    const pausePill = document.getElementById("pausePill");
+    const sheetRows = document.getElementById("sheetRows");
+
+    const mainNodes = [
+      document.getElementById("node-0"),
+      document.getElementById("node-1"),
+      document.getElementById("node-2"),
+      document.getElementById("node-3")
+    ];
+    const subNodes = [
+      document.getElementById("sub-0"),
+      document.getElementById("sub-1")
+    ];
+
+    /* সিন পরিবর্তনের (ট্রানজিশনের) সময় whoosh sound */
+    const whooshAudio = new Audio("whoosh.mp3.wav");
+    whooshAudio.preload = "auto";
+    whooshAudio.volume = 0.75;
+    let audioUnlocked = false;
+    let hasInitialRendered = false;
+
+    function unlockSoundSystem() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      whooshAudio.play().then(() => {
+        whooshAudio.pause();
+        whooshAudio.currentTime = 0;
+      }).catch(() => {});
+    }
+
+    function playTransitionSound() {
+      if (isPaused || !audioUnlocked) return;
+      try {
+        whooshAudio.pause();
+        whooshAudio.currentTime = 0;
+        whooshAudio.volume = 0.75;
+        whooshAudio.playbackRate = 1.0;
+        const p = whooshAudio.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
         }
+      } catch (_) {}
+    }
 
-        function animateNetwork() {
-            ctx.clearRect(0, 0, width, height);
+    /* প্রতিটি সিন ৩ সেকেন্ড (3000ms) + saroar টাইপিং ও রেজাল্ট পপ-আপ ডেটা */
+    const steps = [
+      {
+        focusX: 115,
+        focusY: 165,
+        zoom: 1.18,
+        duration: 3000,
+        bgColor1: "rgba(251, 146, 60, 0.17)",
+        bgPos1: "28% 28%",
+        bgColor2: "rgba(64, 201, 255, 0.16)",
+        bgPos2: "64% 56%",
+        saroarQuery: "লিড ফর্ম সাবমিট হলে কী হবে?",
+        saroarResult: "Webhook সাথে সাথে ওয়ার্কফ্লো ট্রিগার করবে",
+        words: ["ফর্ম", "আসলেই", "অটোমেশন", "শুরু", "হয়।"]
+      },
+      {
+        focusX: 295,
+        focusY: 165,
+        zoom: 1.18,
+        duration: 3000,
+        bgColor1: "rgba(56, 189, 248, 0.18)",
+        bgPos1: "35% 32%",
+        bgColor2: "rgba(129, 140, 248, 0.16)",
+        bgPos2: "65% 58%",
+        saroarQuery: "কীভাবে সঠিক ক্লায়েন্ট বাছাই হবে?",
+        saroarResult: "Intent Filter আসল লিড আলাদা করবে",
+        words: ["ফিল্টার", "সঠিক", "ক্লায়েন্ট", "আলাদা", "করে।"]
+      },
+      {
+        focusX: 545,
+        focusY: 225,
+        zoom: 1.05,
+        duration: 3000,
+        bgColor1: "rgba(192, 132, 252, 0.19)",
+        bgPos1: "42% 35%",
+        bgColor2: "rgba(232, 28, 255, 0.17)",
+        bgPos2: "62% 55%",
+        saroarQuery: "ক্লায়েন্টকে উত্তর দেবে কে?",
+        saroarResult: "AI Agent + Memory স্মার্ট রিপ্লাই তৈরি করবে",
+        words: ["AI", "এজেন্ট", "স্মার্ট", "উত্তর", "বানায়।"]
+      },
+      {
+        focusX: 790,
+        focusY: 215,
+        zoom: 1.08,
+        duration: 3000,
+        bgColor1: "rgba(74, 222, 128, 0.18)",
+        bgPos1: "38% 34%",
+        bgColor2: "rgba(64, 201, 255, 0.15)",
+        bgPos2: "66% 56%",
+        saroarQuery: "লিডের তথ্য কোথায় জমা থাকবে?",
+        saroarResult: "Google Sheets-এ অটোমেটিক নতুন রো যুক্ত হবে",
+        words: ["গুগল", "শিটে", "ডেটা", "সেভ", "হয়।"]
+      },
+      {
+        focusX: 465,
+        focusY: 210,
+        zoom: 0.56,
+        duration: 3000,
+        bgColor1: "rgba(64, 201, 255, 0.17)",
+        bgPos1: "32% 30%",
+        bgColor2: "rgba(232, 28, 255, 0.17)",
+        bgPos2: "66% 56%",
+        saroarQuery: "n8n AI Lead Automation স্ট্যাটাস?",
+        saroarResult: "১০০% অটোমেটেড লিড ফ্লো এখন সক্রিয়!",
+        words: ["পুরো", "n8n", "ফ্লো", "একদম", "রেডি!"]
+      }
+    ];
 
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const dx = nodes[i].x - nodes[j].x;
-                    const dy = nodes[i].y - nodes[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 145) {
-                        ctx.beginPath();
-                        ctx.moveTo(nodes[i].x, nodes[i].y);
-                        ctx.lineTo(nodes[j].x, nodes[j].y);
-                        ctx.strokeStyle = 'rgba(56, 155, 188, 0.38)';
-                        ctx.lineWidth = 1.15;
-                        ctx.stroke();
-                    }
-                }
-            }
+    function applySceneBackground(stepObj) {
+      sceneAmbientBg.style.background = `
+        radial-gradient(circle at ${stepObj.bgPos1}, ${stepObj.bgColor1}, transparent 46%),
+        radial-gradient(circle at ${stepObj.bgPos2}, ${stepObj.bgColor2}, transparent 50%),
+        #111318
+      `;
+    }
 
-            for (let i = 0; i < nodes.length; i++) {
-                const n = nodes[i];
-                n.x += n.vx;
-                n.y += n.vy;
-                if (n.x < 0 || n.x > width) n.vx *= -1;
-                if (n.y < 0 || n.y > height) n.vy *= -1;
+    const sampleLeads = [
+      { name: "তানভীর", intent: "Booking", status: "Saved ✓" },
+      { name: "সুমাইয়া", intent: "Support", status: "Synced ✓" },
+      { name: "আরিফ", intent: "Quote", status: "Done ✓" }
+    ];
 
-                ctx.beginPath();
-                ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-                ctx.fillStyle = '#072a38';
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(65, 175, 210, 0.75)';
-                ctx.lineWidth = n.lineWidth;
-                ctx.stroke();
-            }
+    const wireSpecs = [
+      { d: "M 140 148 C 185 148, 185 148, 230 148", step: 0, sub: false },
+      { d: "M 334 148 C 382 148, 382 148, 430 148", step: 1, sub: false },
+      { d: "M 660 148 C 688 148, 688 148, 715 148", step: 2, sub: false },
+      { d: "M 508 200 C 508 242, 483 242, 483 285", step: 2, sub: true },
+      { d: "M 582 200 C 582 242, 605 242, 605 285", step: 2, sub: true }
+    ];
 
-            requestAnimationFrame(animateNetwork);
-        }
+    let wiresData = [];
+    let pulses = [];
+    let isPaused = false;
+    let currentStep = 0;
+    let elapsed = 0;
+    let lastTick = performance.now();
+    let wordEls = [];
+    let leadIdx = 0;
 
-        window.addEventListener('resize', initNetwork);
-        initNetwork();
-        animateNetwork();
+    function initSvgWires() {
+      wiresLayer.innerHTML = "";
+      pulsesLayer.innerHTML = "";
+      wiresData = [];
+      pulses = [];
 
-        /* ২. Web Audio API সাউন্ড ইঞ্জিন + 10% ব্যাকগ্রাউন্ড মিউজিক */
-        class StageSoundEngine {
-            constructor(candidates, bgVolume) {
-                this.ctx = null;
-                this.candidates = candidates;
-                this.candidateIdx = 0;
-                this.bgVolume = bgVolume;
-                this.bgAudio = new Audio(this.candidates[0]);
-                this.bgAudio.volume = this.bgVolume; // 10% ভলিউম
-                this.bgAudio.loop = true;
-                this.bgAudio.preload = "auto";
-                this.sequenceFinished = false;
-                this.bindAudioFallback();
-            }
+      wireSpecs.forEach((spec, idx) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", spec.d);
+        path.setAttribute("class", spec.sub ? "n8n-wire sub-wire" : "n8n-wire");
+        wiresLayer.appendChild(path);
 
-            bindAudioFallback() {
-                this.bgAudio.addEventListener('error', () => {
-                    if (this.sequenceFinished) return;
-                    this.candidateIdx += 1;
-                    if (this.candidateIdx < this.candidates.length) {
-                        this.bgAudio.src = this.candidates[this.candidateIdx];
-                        this.bgAudio.load();
-                        this.startBackgroundMusic();
-                    }
-                });
-            }
+        const len = path.getTotalLength();
+        wiresData.push({ path, len, step: spec.step, sub: spec.sub });
 
-            unlock() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioCtx();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-                this.startBackgroundMusic();
-            }
+        const colors = spec.sub ? ["#c084fc"] : ["#22c55e", "#40C9FF"];
+        colors.forEach((col, cIdx) => {
+          const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dot.setAttribute("class", "wire-pulse");
+          dot.setAttribute("fill", col);
+          dot.style.color = col;
+          pulsesLayer.appendChild(dot);
 
-            startBackgroundMusic() {
-                if (this.sequenceFinished) return;
-                this.bgAudio.volume = this.bgVolume;
-                if (this.bgAudio.paused) {
-                    const p = this.bgAudio.play();
-                    if (p && typeof p.catch === 'function') {
-                        p.catch(() => {});
-                    }
-                }
-            }
-
-            pauseBackgroundMusic() {
-                this.bgAudio.pause();
-            }
-
-            stopBackgroundMusicAtEnd() {
-                this.sequenceFinished = true;
-                this.bgAudio.pause();
-                this.bgAudio.currentTime = 0;
-            }
-
-            playSoftPop(step = 0) {
-                if (this.sequenceFinished) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                const baseFreq = 360 + Math.min(step, 5) * 42;
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(baseFreq, now);
-                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.65, now + 0.085);
-
-                gain.gain.setValueAtTime(0.0008, now);
-                gain.gain.linearRampToValueAtTime(0.09, now + 0.015);
-                gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.11);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.12);
-            }
-
-            playMouseClick() {
-                if (this.sequenceFinished) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(1450, now);
-                osc.frequency.exponentialRampToValueAtTime(280, now + 0.045);
-
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.24, now + 0.004);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.055);
-            }
-
-            playTransitionWhoosh() {
-                if (this.sequenceFinished) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const duration = 0.42;
-                const sampleCount = Math.floor(this.ctx.sampleRate * duration);
-                const buffer = this.ctx.createBuffer(1, sampleCount, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-
-                for (let i = 0; i < sampleCount; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = buffer;
-
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.Q.setValueAtTime(1.8, now);
-                filter.frequency.setValueAtTime(240, now);
-                filter.frequency.exponentialRampToValueAtTime(1150, now + duration * 0.55);
-                filter.frequency.exponentialRampToValueAtTime(320, now + duration);
-
-                const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(0.0008, now);
-                gain.gain.linearRampToValueAtTime(0.075, now + duration * 0.35);
-                gain.gain.exponentialRampToValueAtTime(0.0008, now + duration);
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                noise.start(now);
-                noise.stop(now + duration);
-            }
-
-            playSuccessChime() {
-                if (this.sequenceFinished) return;
-                this.unlock();
-                const now = this.ctx.currentTime;
-                const notes = [523.25, 659.25, 783.99];
-
-                notes.forEach((freq, idx) => {
-                    const startAt = now + idx * 0.085;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, startAt);
-
-                    gain.gain.setValueAtTime(0.0008, startAt);
-                    gain.gain.linearRampToValueAtTime(0.095, startAt + 0.015);
-                    gain.gain.exponentialRampToValueAtTime(0.0008, startAt + 0.32);
-
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start(startAt);
-                    osc.stop(startAt + 0.34);
-                });
-            }
-        }
-
-        const soundEngine = new StageSoundEngine(BG_MUSIC_CANDIDATES, BG_MUSIC_VOLUME);
-
-        ['pointerdown', 'keydown', 'click'].forEach((evName) => {
-            window.addEventListener(evName, () => {
-                soundEngine.startBackgroundMusic();
-            }, { once: true, passive: true });
+          pulses.push({
+            wireIdx: idx,
+            el: dot,
+            t: cIdx * 0.5,
+            speed: spec.sub ? 0.007 : 0.0065
+          });
         });
+      });
+    }
 
-        /* ৩. লাইভ অ্যানিমেটেড SVG আইকন ও Google Drive লাইভ লোগো আইকন লাইব্রেরি */
-        const LIVE_ICONS = {
-            ai: `
-                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="32" cy="32" r="11" fill="rgba(250,204,21,0.18)"/>
-                    <path d="M32 6v10M32 48v10M6 32h10M48 32h10"/>
-                    <path d="M13.6 13.6l7.1 7.1M43.3 43.3l7.1 7.1M50.4 13.6l-7.1 7.1M20.7 43.3l-7.1 7.1"/>
-                    <circle cx="32" cy="32" r="4" fill="#facc15"/>
-                </svg>
-            `,
-            bolt: `
-                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="36,8 14,36 30,36 28,56 50,28 34,28" fill="rgba(250,204,21,0.22)"/>
-                </svg>
-            `,
-            docScan: `
-                <svg class="live-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 10h20l12 12v32a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.12)"/>
-                    <polyline points="36,10 36,22 48,22"/>
-                    <line class="anim-scan-beam" x1="10" y1="32" x2="54" y2="32" stroke="#fef08a" stroke-width="3.2"/>
-                </svg>
-            `,
-            phone: `
-                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="18" y="8" width="28" height="48" rx="6" fill="rgba(250,204,21,0.14)"/>
-                    <line x1="27" y1="49" x2="37" y2="49" stroke-width="3"/>
-                    <rect x="24" y="16" width="16" height="20" rx="2" stroke-dasharray="4 3"/>
-                </svg>
-            `,
-            driveLiveLogo: `
-                <svg class="live-svg anim-drive-live" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <polygon class="anim-drive-yellow" points="22,12 42,12 56,36 36,36" fill="#FBBC04"/>
-                    <polygon class="anim-drive-green" points="8,36 22,12 32,29 18,53" fill="#34A853"/>
-                    <polygon class="anim-drive-blue" points="18,53 25,41 56,41 49,53" fill="#4285F4"/>
-                </svg>
-            `,
-            plus: `
-                <svg class="live-svg anim-plus" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
-                    <circle cx="32" cy="32" r="22" stroke-opacity="0.35" stroke-width="2"/>
-                    <line x1="32" y1="18" x2="32" y2="46"/>
-                    <line x1="18" y1="32" x2="46" y2="32"/>
-                </svg>
-            `,
-            camera: `
-                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10 22h10l4-6h16l4 6h10a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V26a4 4 0 0 1 4-4z" fill="rgba(250,204,21,0.14)"/>
-                    <circle cx="32" cy="36" r="9"/>
-                    <circle cx="32" cy="36" r="3.5" fill="#facc15"/>
-                </svg>
-            `,
-            crop: `
-                <svg class="live-svg anim-crop" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8v38h38"/>
-                    <path d="M8 18h38v38" stroke-opacity="0.45" stroke-dasharray="4 4"/>
-                    <rect x="18" y="18" width="28" height="28" fill="rgba(250,204,21,0.14)" stroke="none"/>
-                </svg>
-            `,
-            filter: `
-                <svg class="live-svg anim-spin" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6">
-                    <circle cx="32" cy="32" r="20" fill="rgba(250,204,21,0.12)"/>
-                    <path d="M32 12a20 20 0 0 1 0 40z" fill="rgba(250,204,21,0.35)"/>
-                    <circle cx="32" cy="32" r="6"/>
-                </svg>
-            `,
-            save: `
-                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 10h30l10 10v34a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.15)"/>
-                    <rect x="20" y="10" width="18" height="12"/>
-                    <rect x="18" y="32" width="28" height="18" rx="2"/>
-                </svg>
-            `,
-            pdf: `
-                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 10h20l12 12v32a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z" fill="rgba(250,204,21,0.16)"/>
-                    <polyline points="36,10 36,22 48,22"/>
-                    <path class="anim-check" d="M22 36l6 6 14-14" stroke="#fef08a" stroke-width="3.2"/>
-                </svg>
-            `,
-            share: `
-                <svg class="live-svg anim-pulse" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="46" cy="16" r="6" fill="rgba(250,204,21,0.25)"/>
-                    <circle cx="18" cy="32" r="6" fill="rgba(250,204,21,0.25)"/>
-                    <circle cx="46" cy="48" r="6" fill="rgba(250,204,21,0.25)"/>
-                    <line x1="23.5" y1="29" x2="40.5" y2="19"/>
-                    <line x1="23.5" y1="35" x2="40.5" y2="45"/>
-                </svg>
-            `,
-            bell: `
-                <svg class="live-svg anim-float" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M46 26a14 14 0 0 0-28 0c0 14-6 18-6 18h40s-6-4-6-18z" fill="rgba(250,204,21,0.2)"/>
-                    <path d="M27.5 50a5 5 0 0 0 9 0"/>
-                    <circle cx="48" cy="14" r="5" fill="#facc15"/>
-                </svg>
-            `
-        };
+    function moveCameraToStep(stepObj) {
+      const vpRect = viewport.getBoundingClientRect();
+      const baseScale = Math.min(vpRect.width / 460, vpRect.height / 420);
+      const finalScale = baseScale * stepObj.zoom;
 
-        const MOUSE_POINTER_SVG = `
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 4L28 19.5L18.2 21.6L22.8 31.2L18.4 33.3L13.8 23.7L7 29.5V4Z" fill="#ffffff" stroke="#061820" stroke-width="2.2" stroke-linejoin="round"/>
-            </svg>
-        `;
+      const offsetX = (460 - stepObj.focusX) * finalScale;
+      const offsetY = (220 - stepObj.focusY) * finalScale;
 
-        function buildTimedWords(sentence) {
-            const rawWords = sentence.trim().split(/\s+/);
-            const startMargin = 0.05;
-            const endMargin = 0.96;
-            const step = (endMargin - startMargin) / rawWords.length;
+      canvas.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px) scale(${finalScale.toFixed(3)})`;
+    }
 
-            return rawWords.map((word, i) => ({
-                text: word,
-                start: startMargin + i * step,
-                end: startMargin + (i + 1) * step
-            }));
+    function addNewSheetRow() {
+      const item = sampleLeads[leadIdx % sampleLeads.length];
+      leadIdx++;
+      const tr = document.createElement("tr");
+      tr.className = "flash-row";
+      tr.innerHTML = `<td>${item.name}</td><td>${item.intent}</td><td style="color:#4ade80;font-weight:800;">${item.status}</td>`;
+      sheetRows.appendChild(tr);
+      if (sheetRows.children.length > 3) {
+        sheetRows.removeChild(sheetRows.firstElementChild);
+      }
+    }
+
+    function setStep(idx) {
+      currentStep = idx;
+      const stepObj = steps[currentStep];
+      const activeNodeIdx = Math.min(currentStep, mainNodes.length - 1);
+
+      if (hasInitialRendered) {
+        playTransitionSound();
+      } else {
+        hasInitialRendered = true;
+      }
+
+      /* ২ সিন পর পর টাইটেলটি স্ক্রিনে দেখানো (সিন ০, ২, ৪) ও হাইলাইট অ্যানিমেশন রিস্টার্ট */
+      topTitlePill.classList.remove("show-title");
+      if (currentStep % 2 === 0) {
+        void topTitlePill.offsetWidth;
+        topTitlePill.classList.add("show-title");
+      }
+
+      /* saroar সার্চ বক্স রিসেট ও রেজাল্ট পপ-আপ প্রস্তুত */
+      saroarQueryText.textContent = "";
+      saroarResultText.textContent = stepObj.saroarResult;
+      saroarResultPopup.classList.remove("visible");
+
+      applySceneBackground(stepObj);
+
+      mainNodes.forEach((node, i) => {
+        if (currentStep === 4) {
+          node.classList.remove("active");
+          node.classList.add("done");
+        } else {
+          node.classList.toggle("active", i === activeNodeIdx);
+          node.classList.toggle("done", i < activeNodeIdx);
+        }
+      });
+
+      subNodes.forEach((sNode) => {
+        sNode.classList.toggle("active", currentStep === 2);
+        sNode.classList.toggle("done", currentStep > 2);
+      });
+
+      wiresData.forEach((w) => {
+        const isHot = currentStep === 4 || w.step === activeNodeIdx || w.step === activeNodeIdx - 1;
+        w.path.classList.toggle("active-wire", isHot);
+      });
+
+      if (currentStep === 3) {
+        addNewSheetRow();
+      }
+
+      moveCameraToStep(stepObj);
+
+      karaokeLine.innerHTML = "";
+      wordEls = stepObj.words.map((word) => {
+        const span = document.createElement("span");
+        span.className = "k-word";
+        span.textContent = word;
+        karaokeLine.appendChild(span);
+        return span;
+      });
+    }
+
+    function animate(now) {
+      const dt = now - lastTick;
+      lastTick = now;
+
+      if (!isPaused) {
+        elapsed += dt;
+        const stepObj = steps[currentStep];
+
+        if (elapsed >= stepObj.duration) {
+          elapsed = 0;
+          setStep((currentStep + 1) % steps.length);
+        } else {
+          const progress = elapsed / stepObj.duration;
+
+          /* saroar সার্চ বক্সে টাইপিং অ্যানিমেশন (প্রথম ৪০% সময়ে টাইপ শেষ হবে) */
+          const typingProgress = Math.min(1, progress / 0.4);
+          const charCount = Math.floor(typingProgress * stepObj.saroarQuery.length);
+          saroarQueryText.textContent = stepObj.saroarQuery.slice(0, charCount);
+
+          /* টাইপিং শেষ হলেই রেজাল্ট পপ-আপ প্রদর্শন */
+          if (progress >= 0.42) {
+            saroarResultPopup.classList.add("visible");
+          }
+
+          /* মূল শব্দের পেছনে হলুদ হাইলাইট বার অ্যাকসেন্ট */
+          const activeWord = Math.min(
+            wordEls.length - 1,
+            Math.floor(progress * wordEls.length)
+          );
+
+          wordEls.forEach((el, i) => {
+            el.classList.toggle("active", i === activeWord);
+          });
         }
 
-        /* ৪. ১০টি সিন */
-        const scenes = [
-            {
-                badge: "SCENE 01 • AI HOOK",
-                headingBefore: "AI-এর যুগে ",
-                headingAccent: "দ্রুত ডকুমেন্ট স্ক্যান",
-                headingAfter: "",
-                subtext: "সময় বাঁচিয়ে মাত্র কয়েক সেকেন্ডেই যেকোনো কাগজপত্র ডিজিটাল করুন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "ai", title: "AI স্মার্ট স্ক্যান", desc: "দ্রুত ও নির্ভুল ডকুমেন্ট ক্যাপচার", span: 5, size: "lg" },
-                    { iconKey: "bolt", title: "সময় সাশ্রয়", desc: "সেকেন্ডেই কাজ শেষ", span: 3, size: "sm" },
-                    { iconKey: "docScan", title: "ক্লিয়ার আউটপুট", desc: "ঝকঝকে ফাইল", span: 4, size: "md" }
-                ],
-                caption: "এখন AI-এর যুগ! একটি ডকুমেন্ট স্ক্যান করতে আর সময় নষ্ট করার প্রয়োজন নেই।"
-            },
-            {
-                badge: "SCENE 02 • SMARTPHONE",
-                headingBefore: "হাতের স্মার্টফোনই ",
-                headingAccent: "সহজ স্ক্যানার",
-                headingAfter: "",
-                subtext: "দোকানে বা স্ক্যানারের কাছে যাওয়ার কোনো প্রয়োজন নেই",
-                duration: 5000,
-                cards: [
-                    { iconKey: "phone", title: "পকেট স্ক্যানার", desc: "যেকোনো স্মার্টফোনেই সহজ ও দ্রুত সমাধান", span: 6, size: "lg" },
-                    { iconKey: "docScan", title: "আইডি ও ফর্ম", desc: "সহজ স্ক্যান", span: 3, size: "sm" },
-                    { iconKey: "ai", title: "স্মার্ট ফ্রেম", desc: "দ্রুত সংরক্ষণ", span: 3, size: "sm" }
-                ],
-                caption: "আপনার হাতে থাকা স্মার্টফোন দিয়েই খুব সহজে স্ক্যান করতে পারবেন যেকোনো কাগজপত্র।"
-            },
-            {
-                badge: "SCENE 03 • STEP 01",
-                headingBefore: "প্রথমে খুলুন ",
-                headingAccent: "Google Drive",
-                headingAfter: " অ্যাপ",
-                subtext: "আপনার ফোনে থাকা Google Drive অ্যাপটি ওপেন করুন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "driveLiveLogo", title: "Google Drive অ্যাপ", desc: "হোম স্ক্রিন বা অ্যাপ ড্রয়ার থেকে ওপেন করুন", span: 8, size: "lg" },
-                    { iconKey: "ai", title: "ক্লাউড সিঙ্ক", desc: "ফাইল নিরাপদ", span: 4, size: "sm" }
-                ],
-                caption: "প্রথমে আপনার ফোনে Google Drive অ্যাপটি ওপেন করুন।"
-            },
-            {
-                badge: "SCENE 04 • STEP 02",
-                headingBefore: "প্লাস (+) থেকে ",
-                headingAccent: "Scan অপশন",
-                headingAfter: " বেছে নিন",
-                subtext: "নিচের প্লাস (+) আইকনে ট্যাপ করে Scan অপশনে ক্লিক করুন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "plus", title: "প্লাস (+) আইকন", desc: "নিচের কোণায় ট্যাপ", span: 4, size: "sm" },
-                    { iconKey: "docScan", title: "Scan অপশন বেছে নিন", desc: "সরাসরি ক্যামেরা স্ক্যান মোড চালু হবে", span: 8, size: "lg" }
-                ],
-                caption: "এরপর নিচের প্লাস (+) আইকনে ক্লিক করুন এবং Scan অপশনটি বেছে নিন।"
-            },
-            {
-                badge: "SCENE 05 • STEP 03",
-                headingBefore: "ডকুমেন্ট রাখুন ",
-                headingAccent: "ক্যামেরার সামনে",
-                headingAfter: "",
-                subtext: "ভালো আলো ও পরিষ্কার ফ্রেমে কাগজটি স্থির রাখুন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "docScan", title: "ক্যামেরার সামনে ডকুমেন্ট", desc: "কাগজটি সমতল রেখে সোজা ফ্রেমে ধরুন", span: 7, size: "lg" },
-                    { iconKey: "camera", title: "সঠিক ফ্রেমিং", desc: "স্পষ্ট লেখা", span: 5, size: "sm" }
-                ],
-                caption: "এবার যে ডকুমেন্টটি স্ক্যান করবেন, সেটি ক্যামেরার সামনে ধরুন।"
-            },
-            {
-                badge: "SCENE 06 • AUTO DETECT",
-                headingBefore: "ছবি তুলুন ও ",
-                headingAccent: "অটো ডিটেক্ট",
-                headingAfter: " দেখুন",
-                subtext: "অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে",
-                duration: 5000,
-                cards: [
-                    { iconKey: "camera", title: "ছবি তুলুন", desc: "শাটার চাপুন", span: 4, size: "sm" },
-                    { iconKey: "crop", title: "স্বয়ংক্রিয় চারপাশ শনাক্তকরণ", desc: "AI নিজে থেকেই ডকুমেন্টের বর্ডার ধরে নেবে", span: 8, size: "lg" }
-                ],
-                caption: "ক্যামেরা দিয়ে ছবি তুলুন। অ্যাপটি স্বয়ংক্রিয়ভাবে ডকুমেন্টের চারপাশ শনাক্ত করে নেবে।"
-            },
-            {
-                badge: "SCENE 07 • CROP & FILTER",
-                headingBefore: "প্রয়োজনমতো ",
-                headingAccent: "Crop ও ফিল্টার",
-                headingAfter: " ব্যবহার করুন",
-                subtext: "চারপাশ কেটে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার দিন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "crop", title: "Crop টুল", desc: "চারপাশ নিখুঁত করুন", span: 4, size: "md" },
-                    { iconKey: "filter", title: "কালার ও B&W ফিল্টার", desc: "প্রয়োজন অনুযায়ী সেরা লুক দিন", span: 5, size: "lg" },
-                    { iconKey: "bolt", title: "ক্লিয়ার ভিউ", desc: "সহজে পঠনযোগ্য", span: 3, size: "sm" }
-                ],
-                caption: "প্রয়োজনে ছবির চারপাশ Crop করে নিন এবং কালার বা ব্ল্যাক অ্যান্ড হোয়াইট ফিল্টার ব্যবহার করুন।"
-            },
-            {
-                badge: "SCENE 08 • SAVE",
-                headingBefore: "সব ঠিক থাকলে ",
-                headingAccent: "Save বাটনে",
-                headingAfter: " ক্লিক করুন",
-                subtext: "এক ক্লিকেই আপনার ডকুমেন্টটি সংরক্ষিত হয়ে যাবে",
-                duration: 5000,
-                cards: [
-                    { iconKey: "docScan", title: "প্রিভিউ চেক", desc: "লেখাগুলো ঠিক আছে কি না দেখুন", span: 4, size: "sm" },
-                    { iconKey: "save", title: "Save বাটনে ক্লিক", desc: "ডকুমেন্ট সাথে সাথে সেভ হয়ে যাবে", span: 8, size: "lg" }
-                ],
-                caption: "সবকিছু ঠিক থাকলে Save বাটনে ক্লিক করুন।"
-            },
-            {
-                badge: "SCENE 09 • PDF & SHARE",
-                headingBefore: "তৈরি হবে ",
-                headingAccent: "PDF ফাইল",
-                headingAfter: " ও শেয়ারিং",
-                subtext: "WhatsApp, Messenger কিংবা ইমেইলে মুহূর্তেই পাঠাতে পারবেন",
-                duration: 5000,
-                cards: [
-                    { iconKey: "pdf", title: "রেডি PDF ফাইল", desc: "ডকুমেন্ট স্বয়ংক্রিয়ভাবে PDF-এ রূপান্তর হবে", span: 6, size: "lg" },
-                    { iconKey: "share", title: "মেসেজ ও চ্যাট", desc: "দ্রুত শেয়ার", span: 3, size: "sm" },
-                    { iconKey: "bolt", title: "ইমেইল সেন্ড", desc: "সহজে পাঠান", span: 3, size: "sm" }
-                ],
-                caption: "ব্যস! আপনার ডকুমেন্টটি PDF ফাইলে তৈরি হয়ে যাবে। এখন চাইলে WhatsApp, Messenger কিংবা ইমেইলে পাঠাতে পারবেন।"
-            },
-            {
-                badge: "SCENE 10 • ENDING",
-                headingBefore: "সহজ ট্রিকটি কাজে লাগান ও ",
-                headingAccent: "সঙ্গে থাকুন",
-                headingAfter: "",
-                subtext: "এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন",
-                duration: 5000,
-                isEnding: true,
-                cards: [
-                    { iconKey: "bolt", title: "কয়েক সেকেন্ডেই", desc: "দ্রুত স্ক্যান", span: 3, size: "sm" },
-                    { iconKey: "bell", title: "পেজ ফলো করে সঙ্গে থাকুন", desc: "নতুন AI ও টেক টিপস সবার আগে পেতে যুক্ত থাকুন", span: 6, size: "lg", hasBellToFollow: true },
-                    { iconKey: "share", title: "শেয়ার করুন", desc: "উপকারী ট্রিক", span: 3, size: "sm", isShareTarget: true }
-                ],
-                caption: "মাত্র কয়েক সেকেন্ডেই ডকুমেন্ট স্ক্যান করার এই সহজ ট্রিকটি কাজে লাগান। এমন আরও টিপস পেতে পেজটি ফলো করে সংঙ্গে থাকুন"
-            }
-        ];
+        for (const p of pulses) {
+          const w = wiresData[p.wireIdx];
+          if (!w) continue;
+          p.t += p.speed * (dt / 16.67);
+          if (p.t > 1) p.t -= 1;
 
-        const ANIMATION_DURATION = scenes.reduce((sum, s) => sum + s.duration, 0);
-        const TOTAL_TIMELINE_MS = ANIMATION_DURATION + EXTRA_HOLD_MS;
-
-        const stage169 = document.getElementById('stage169');
-        const progressBarsEl = document.getElementById('progressBars');
-        const visualViewport = document.getElementById('visualViewport');
-        const karaokeCaption = document.getElementById('karaokeCaption');
-        const timerPill = document.getElementById('timerPill');
-        const touchFeedback = document.getElementById('touchFeedback');
-
-        let currentSceneIndex = 0;
-        let activeLayerEl = null;
-        let isPlaying = true;
-        let elapsedInScene = 0;
-        let totalElapsedMs = 0;
-        let lastTimestamp = null;
-        let popTimers = [];
-        let feedbackTimeout = null;
-        let preExitTriggered = false;
-        let sequenceCompleted = false;
-
-        scenes.forEach(() => {
-            const track = document.createElement('div');
-            track.className = 'progress-track';
-            const fill = document.createElement('div');
-            fill.className = 'progress-fill';
-            track.appendChild(fill);
-            progressBarsEl.appendChild(track);
-        });
-        const progressFills = document.querySelectorAll('.progress-fill');
-
-        function clearPopTimers() {
-            popTimers.forEach((t) => clearTimeout(t));
-            popTimers = [];
+          const pt = w.path.getPointAtLength(p.t * w.len);
+          p.el.setAttribute("cx", pt.x.toFixed(1));
+          p.el.setAttribute("cy", pt.y.toFixed(1));
         }
+      }
 
-        function getSceneFlowDirection(index) {
-            return Math.floor(index / 2) % 2 === 0 ? 'left' : 'right';
-        }
+      requestAnimationFrame(animate);
+    }
 
-        function getPhotoBoxHTML(scene) {
-            if (!scene.isEnding) return '';
-            return `
-                <div class="left-photo-box" id="userPhotoBox">
-                    <div class="rounded-photo-frame">
-                        <img src="${USER_PHOTO_URL}" alt="Saroar">
-                    </div>
-                </div>
-            `;
-        }
+    function togglePause() {
+      unlockSoundSystem();
+      isPaused = !isPaused;
+      lastTick = performance.now();
+      document.body.classList.toggle("is-paused", isPaused);
+      pausePill.classList.toggle("visible", isPaused);
+      if (isPaused) {
+        whooshAudio.pause();
+      } else {
+        playTransitionSound();
+      }
+    }
 
-        function createSceneLayer(scene, enterDir) {
-            const layer = document.createElement('div');
-            layer.className = `scene-layer ${enterDir === 'left' ? 'enter-from-right' : 'enter-from-left'}`;
+    window.addEventListener("pointerdown", togglePause);
+    window.addEventListener("resize", () => moveCameraToStep(steps[currentStep]));
 
-            const cardsHTML = scene.cards.map(c => {
-                if (c.hasBellToFollow) {
-                    return `
-                        <div class="info-card size-${c.size || 'md'} bell-target-card" style="--span: ${c.span || 4};">
-                            <span class="click-ripple ripple-bell"></span>
-                            <div class="bell-state-wrapper">
-                                <div class="bell-before-click" id="bellBeforeClick">
-                                    <div class="live-icon-wrap">${LIVE_ICONS.bell}</div>
-                                    <div class="card-title">${c.title}</div>
-                                </div>
-                                <div class="follow-pill-pop" id="followPillPop">
-                                    <span>✓</span>
-                                    <span>ফলো বাটন • ফলোড</span>
-                                </div>
-                            </div>
-                            <div class="card-desc">${c.desc}</div>
-                        </div>
-                    `;
-                }
-
-                if (c.isShareTarget) {
-                    return `
-                        <div class="info-card size-${c.size || 'md'} share-target-card" id="shareTargetCard" style="--span: ${c.span || 4};">
-                            <span class="click-ripple ripple-share"></span>
-                            <div class="live-icon-wrap">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.share}</div>
-                            <div class="card-title">${c.title}</div>
-                            <div class="share-desc-text" id="shareDescText">${c.desc}</div>
-                        </div>
-                    `;
-                }
-
-                const extraWrapClass = c.iconKey === 'driveLiveLogo' ? ' drive-logo-wrap' : '';
-
-                return `
-                    <div class="info-card size-${c.size || 'md'}" style="--span: ${c.span || 4};">
-                        <div class="live-icon-wrap${extraWrapClass}">${LIVE_ICONS[c.iconKey] || LIVE_ICONS.ai}</div>
-                        <div class="card-title">${c.title}</div>
-                        <div class="card-desc">${c.desc}</div>
-                    </div>
-                `;
-            }).join('');
-
-            const pointerHTML = scene.isEnding
-                ? `<span class="pointer-cursor">${MOUSE_POINTER_SVG}</span>`
-                : '';
-
-            const rowClass = scene.isEnding ? 'content-row has-left-photo' : 'content-row';
-
-            layer.innerHTML = `
-                <div class="scene-inner">
-                    <div class="top-texts-group">
-                        <span class="scene-badge">${scene.badge}</span>
-                        <h1 class="scene-heading">
-                            ${scene.headingBefore}<span class="accent-highlight">${scene.headingAccent}</span>${scene.headingAfter}
-                        </h1>
-                        <p class="scene-subtext">${scene.subtext}</p>
-                    </div>
-                    <div class="${rowClass}">
-                        ${getPhotoBoxHTML(scene)}
-                        <div class="cards-grid">
-                            ${pointerHTML}
-                            ${cardsHTML}
-                        </div>
-                    </div>
-                </div>
-            `;
-            return layer;
-        }
-
-        function triggerCurrentSceneExit() {
-            if (!activeLayerEl || preExitTriggered) return;
-            preExitTriggered = true;
-            const exitDir = getSceneFlowDirection(currentSceneIndex);
-            const exitingEl = activeLayerEl;
-            exitingEl.classList.remove('active');
-            exitingEl.classList.add(exitDir === 'left' ? 'exiting-left' : 'exiting-right');
-            setTimeout(() => {
-                if (exitingEl.parentNode) exitingEl.remove();
-            }, 620);
-        }
-
-        function loadScene(index) {
-            if (activeLayerEl && !preExitTriggered) {
-                triggerCurrentSceneExit();
-            }
-
-            currentSceneIndex = index;
-            elapsedInScene = 0;
-            preExitTriggered = false;
-            clearPopTimers();
-
-            const scene = scenes[index];
-            scene.timedWords = buildTimedWords(scene.caption);
-
-            soundEngine.startBackgroundMusic();
-            soundEngine.playTransitionWhoosh();
-
-            const flowDir = getSceneFlowDirection(index);
-            const newLayer = createSceneLayer(scene, flowDir);
-            visualViewport.appendChild(newLayer);
-            activeLayerEl = newLayer;
-
-            stage169.classList.remove('ready');
-            karaokeCaption.innerHTML = '';
-            scene.timedWords.forEach((w) => {
-                const span = document.createElement('span');
-                span.className = 'k-word';
-                span.textContent = w.text;
-                karaokeCaption.appendChild(span);
-            });
-
-            const caret = document.createElement('span');
-            caret.className = 'typing-caret';
-            karaokeCaption.appendChild(caret);
-
-            void newLayer.offsetWidth;
-
-            requestAnimationFrame(() => {
-                newLayer.classList.add('active');
-                stage169.classList.add('ready');
-
-                const totalItems = 2 + scene.cards.length;
-                for (let i = 0; i < totalItems; i++) {
-                    const delayMs = 80 + i * 48;
-                    const timer = setTimeout(() => {
-                        if (isPlaying && !sequenceCompleted) soundEngine.playSoftPop(i);
-                    }, delayMs);
-                    popTimers.push(timer);
-                }
-
-                /* শেষ সিনে ডাবল ক্লিক: ১ম ক্লিক রিং বেলে -> ফলো বাটন, ২য় ক্লিক শেয়ার অপশনে -> নিচের লেখা সবুজ */
-                if (scene.isEnding) {
-                    const firstClickTimer = setTimeout(() => {
-                        if (!isPlaying || sequenceCompleted) return;
-                        soundEngine.playMouseClick();
-
-                        const bellBefore = newLayer.querySelector('#bellBeforeClick');
-                        const followPop = newLayer.querySelector('#followPillPop');
-
-                        if (bellBefore) bellBefore.classList.add('clicked-hide');
-                        if (followPop) {
-                            followPop.classList.add('visible');
-                            requestAnimationFrame(() => {
-                                followPop.style.opacity = '1';
-                                followPop.style.transform = 'scale(1) translateY(0)';
-                            });
-                        }
-                    }, 1150);
-
-                    const secondClickTimer = setTimeout(() => {
-                        if (!isPlaying || sequenceCompleted) return;
-                        soundEngine.playMouseClick();
-
-                        const shareCard = newLayer.querySelector('#shareTargetCard');
-                        const shareDesc = newLayer.querySelector('#shareDescText');
-
-                        if (shareCard) shareCard.classList.add('share-clicked');
-                        if (shareDesc) shareDesc.classList.add('green-active');
-
-                        const chimeTimer = setTimeout(() => {
-                            if (isPlaying && !sequenceCompleted) soundEngine.playSuccessChime();
-                        }, 120);
-                        popTimers.push(chimeTimer);
-                    }, 2350);
-
-                    popTimers.push(firstClickTimer, secondClickTimer);
-                }
-            });
-
-            progressFills.forEach((fill, i) => {
-                fill.style.width = i < index ? '100%' : '0%';
-            });
-        }
-
-        function tick(timestamp) {
-            if (!lastTimestamp) lastTimestamp = timestamp;
-            const delta = timestamp - lastTimestamp;
-            lastTimestamp = timestamp;
-
-            if (isPlaying && !sequenceCompleted) {
-                totalElapsedMs = Math.min(totalElapsedMs + delta, TOTAL_TIMELINE_MS);
-                const totalSec = Math.floor(totalElapsedMs / 1000);
-                timerPill.textContent = `${String(totalSec).padStart(2, '0')}s / 55s`;
-
-                const isLastScene = currentSceneIndex === scenes.length - 1;
-
-                if (!isLastScene) {
-                    const scene = scenes[currentSceneIndex];
-                    elapsedInScene += delta;
-                    const progress = Math.min(elapsedInScene / scene.duration, 1);
-                    progressFills[currentSceneIndex].style.width = `${progress * 100}%`;
-
-                    const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                    const caretEl = karaokeCaption.querySelector('.typing-caret');
-
-                    scene.timedWords.forEach((w, idx) => {
-                        if (progress >= w.start && progress <= w.end) {
-                            wordEls[idx].classList.add('active');
-                            wordEls[idx].classList.remove('spoken');
-                            if (caretEl && wordEls[idx].nextSibling !== caretEl) {
-                                wordEls[idx].after(caretEl);
-                            }
-                        } else if (progress > w.end) {
-                            wordEls[idx].classList.remove('active');
-                            wordEls[idx].classList.add('spoken');
-                        } else {
-                            wordEls[idx].classList.remove('active', 'spoken');
-                        }
-                    });
-
-                    if (progress >= 0.89 && !preExitTriggered) {
-                        triggerCurrentSceneExit();
-                        const nextIndex = currentSceneIndex + 1;
-                        setTimeout(() => {
-                            if (isPlaying && !sequenceCompleted) loadScene(nextIndex);
-                        }, 120);
-                    } else if (progress >= 1 && !preExitTriggered) {
-                        loadScene(currentSceneIndex + 1);
-                    }
-                } else {
-                    const scene = scenes[currentSceneIndex];
-                    elapsedInScene += delta;
-                    const sceneProgress = Math.min(elapsedInScene / scene.duration, 1);
-                    progressFills[currentSceneIndex].style.width = `${sceneProgress * 100}%`;
-
-                    const wordEls = karaokeCaption.querySelectorAll('.k-word');
-                    const caretEl = karaokeCaption.querySelector('.typing-caret');
-
-                    scene.timedWords.forEach((w, idx) => {
-                        if (sceneProgress >= w.start && sceneProgress <= w.end) {
-                            wordEls[idx].classList.add('active');
-                            wordEls[idx].classList.remove('spoken');
-                            if (caretEl && wordEls[idx].nextSibling !== caretEl) {
-                                wordEls[idx].after(caretEl);
-                            }
-                        } else if (sceneProgress > w.end) {
-                            wordEls[idx].classList.remove('active');
-                            wordEls[idx].classList.add('spoken');
-                        } else {
-                            wordEls[idx].classList.remove('active', 'spoken');
-                        }
-                    });
-
-                    if (sceneProgress >= 1 && caretEl) {
-                        caretEl.remove();
-                    }
-
-                    if (totalElapsedMs >= TOTAL_TIMELINE_MS) {
-                        sequenceCompleted = true;
-                        isPlaying = false;
-                        soundEngine.stopBackgroundMusicAtEnd();
-                        timerPill.textContent = `55s / 55s`;
-                    }
-                }
-            }
-
-            requestAnimationFrame(tick);
-        }
-
-        stage169.addEventListener('click', () => {
-            if (sequenceCompleted) return;
-            soundEngine.unlock();
-            isPlaying = !isPlaying;
-            stage169.classList.toggle('paused', !isPlaying);
-
-            if (isPlaying) {
-                soundEngine.startBackgroundMusic();
-            } else {
-                soundEngine.pauseBackgroundMusic();
-            }
-
-            touchFeedback.textContent = isPlaying ? '▶' : '⏸';
-            touchFeedback.classList.add('show');
-            clearTimeout(feedbackTimeout);
-            feedbackTimeout = setTimeout(() => {
-                touchFeedback.classList.remove('show');
-            }, 500);
-        });
-
-        loadScene(0);
-        requestAnimationFrame(tick);
-    </script>
+    initSvgWires();
+    setStep(0);
+    requestAnimationFrame(animate);
+  </script>
 </body>
 </html>
